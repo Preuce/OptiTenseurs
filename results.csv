@@ -1,0 +1,7 @@
+,,Matrice,,Split,,SplitRange,,,TriScore,
+Instance,Taille,Résultat,Temps,Résultat,Temps,Séparations,Résultat,Temps,Résultat,Temps
+test.txt,6,110,"3,00E-02",110,"2,00E-02",,,,,
+test2.txt,3,96,"6,00E-05",96,"2,00E-04",,,,,
+test3.txt,2,4,"2,00E-05",4,"2,00E-05",,,,,
+test4.txt,8,,,2494,"1,50E+00",,,,,
+test5.txt,10,,,2593,"1,80E+02",,,,,
