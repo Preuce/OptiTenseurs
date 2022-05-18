@@ -1,11 +1,4 @@
-#include <string>
-#include <vector>
-#include <iostream>
-#include <fstream>
-#include <random>
-#include <string.h>
-
-using namespace std;
+#include "InstanceGenerator.hpp"
 
 void initInstances(int n, int min, int max, int amount, char* file){
     char s [200];
@@ -14,9 +7,8 @@ void initInstances(int n, int min, int max, int amount, char* file){
     strcat(s, file);
     strcat(s, "/");
     for(int i = 1; i <= amount; i++){
-        std::string name = "instance_" + to_string(i) + "_" + to_string(n) + ".col";
-        std::ofstream file(s + name);
-
+        string name = "instance_" + to_string(i) + "_" + to_string(n) + ".col";
+        ofstream file(s + name);
         if(file.is_open()){
             //c name
             //c Source
@@ -31,9 +23,7 @@ void initInstances(int n, int min, int max, int amount, char* file){
             //e edges
             //tant qu'on a pas placé ..., on fait
             if(n > 3){
-                file << "e 0 1 " << min + rand()%(max - min) << endl;
-                file << "e 0 " << n/2 << " " << min + rand()%(max - min) << endl;
-                for(int i = 1; i < n/2 - 1; i++){
+                for(int i = 0; i < n/2 - 1; i++){
                     file << "e " << i << " " << i+1 << " " << min + rand()%(max - min) << endl;
                     file << "e " << i << " " << i+n/2 << " " << min + rand()%(max - min) << endl;
                 }
@@ -50,27 +40,31 @@ void initInstances(int n, int min, int max, int amount, char* file){
 
 
 int main(int argc, char* argv[]){
-    switch (argc)
-    {
-    case 2:
-        initInstances(stoi(argv[1]), 1, 10, 1, "autre");
-        break;
-    case 3:
-        initInstances(stoi(argv[1]), max(1, stoi(argv[2])), stoi(argv[2])+10, 1, "autre");
-        break;
 
-    case 4:
-        initInstances(stoi(argv[1]), max(1, stoi(argv[2])), stoi(argv[3]), 1, "autre");
-        break;
-
-    case 5:
-        initInstances(stoi(argv[1]), max(1, stoi(argv[2])), stoi(argv[3]), stoi(argv[4]), "autre");
-        break;
-    
-    case 6:
-        initInstances(stoi(argv[1]), max(1, stoi(argv[2])), stoi(argv[3]), stoi(argv[4]), argv[5]);
-    default:
-        initInstances(6, 1, 10, 1, "small");
-        break;
+    for(int i = 1; i < argc - 1; i++){
+        switch(*argv[i]){
+            case 'm':
+                m = atoi(argv[i+1]);
+                i++;
+                break;
+            case 'M':
+                M = atoi(argv[i+1]);
+                i++;
+                break;
+            case 'n':
+                amount = atoi(argv[i+1]);
+                i++;
+                break;
+            case 's':
+                size = atoi(argv[i+1]);
+                i++;
+                break;
+            case 'd':
+                dir = argv[i+1];
+                i++;
+                break;
+        }
     }
+    initInstances(size, m, M, amount, dir);
+    cout << "Generation complete" << endl;
 }

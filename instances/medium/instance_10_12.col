@@ -1,0 +1,21 @@
+c FILE: instance_10_12.col
+c SOURCE: initInstances
+c min : 1
+c max : 10
+p 12
+e 0 1 4
+e 0 6 3
+e 1 2 1
+e 1 7 1
+e 2 3 8
+e 2 8 3
+e 3 4 5
+e 3 9 4
+e 4 5 7
+e 4 10 3
+e 5 11 6
+e 6 7 2
+e 7 8 3
+e 8 9 7
+e 9 10 5
+e 10 11 3
