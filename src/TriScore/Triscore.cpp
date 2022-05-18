@@ -102,17 +102,17 @@ void updateG(int i){
                     key += pow(2, k);
                 }
             }
-            F[j] = key;
+            //F[j] = key;
         }
     }
 
-    for(int j = 0; j < changed.size(); j++){
+    /*for(int j = 0; j < changed.size(); j++){
         for(int k = j+1; k < changed.size(); k++){
-            if(compare(changed[j], changed[k]) /*&& G[size*changed[j] + changed[k]] > 1*/){
+            if(compare(changed[j], changed[k]) && G[size*changed[j] + changed[k]] > 1){
                 merge(changed[j], changed[k]);
             }
         }
-    }
+    }*/
 }
 
 /**

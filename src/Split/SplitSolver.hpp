@@ -48,13 +48,8 @@ int splitRange(int delta);
 
 Split rearrange(vector<Tab> v);
 
-/*void execfile(const char* file);
-void execdir(const char* dir);*/
+void execfile(const char* file);
+void execdir(const char* dir);
 };
-
-Split solver;
-int range = -1;
-const char* path;
-bool sf = true;
 
 #endif

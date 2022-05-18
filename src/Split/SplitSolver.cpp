@@ -52,105 +52,6 @@ int Split::solve(Tab S){
 }
 
 /**
- * @brief 
- * 
- * @param delta the horizontal size of a slice 
- * @return int 
- */
-int Split::splitRange(int delta){
-    int cost = INT32_MAX;
-    vector<Tab> v;
-
-    if(delta >= size/2){
-        cost = solve(S);
-    }else{
-        //pour chaque décalage possible dans delta
-        for(int d = 0; d <= (size/2)%delta; d++){
-            int localcost = 0;
-            for(int i = 0; i < v.size(); i++){
-                v[i].clear();
-            }
-            v.clear();
-            //int taille = size/(2*delta) + 2;
-            v.resize(2 + size/(2*delta)); //TODO: pb here
-            //même dans le cas d'un perfect fit on doit considérer qu'on va déplacer nos tranches
-            //donc on a besoin de pouvoir gérer les "restes" à droite et à gauche
-
-            //on s'intéresse aux premiers, qu'on a pas pu ranger
-            for(int i = 0; i < d; i++){
-                v[0].push_back(i);
-                v[0].push_back(i+size/2);
-            }
-
-            //pour chaque i dans delta
-            for(int i = 0; i < delta; i++){
-                //pour chaque tranche delta
-                for(int k = 0; k < size/(2*delta); k++){
-                    v[k+min(1, d)].push_back(k*delta + i + d);
-                    v[k+min(1, d)].push_back(k*delta + i + size/2 + d);
-                }
-            }
-            
-            //on s'intéresse aux derniers, qu'on a pas pu ranger
-            for(int i = 0; i < (size/2)%delta - d/*(size/2 - d)%delta*/; i++){
-                v[v.size()-1].push_back((v.size()-1)*delta + d +i);
-                v[v.size()-1].push_back((v.size()-1)*delta + d + i + size/2);
-            }
-
-            //on solve pour chaque split non-vide
-            for(Tab s : v){
-                if(!s.empty()){
-                    cout << s.size() << endl;
-                    localcost += solve(s);
-                }
-            }
-            //récupérer les résultats, en faire un nouveau réseau et faire la contraction des sous-sensemble entre eux
-            Split newOrga = rearrange(v);
-            localcost += newOrga.solve(newOrga.S);
-            cost = min(cost, localcost);
-        }    
-    }
-    return cost;
-}
-
-Split Split::rearrange(vector<Tab> v){
-    Split s;
-    s.size = v.size();
-    s.S.clear();
-    s.S.resize(s.size);
-
-    s.G.clear();
-    s.G.resize(s.size*(s.size+1), 1);
-
-    s.A.clear();
-    s.A.resize(s.size*s.size, 1);
-
-    s.C.clear();
-    s.C.resize(pow(2, s.size), -1);
-
-    s.P1.clear();
-    s.P1.resize(pow(2, s.size), -1);
-
-    s.P2.clear();
-    s.P2.resize(pow(2,s.size), -1);
-
-    for(int i = 0; i < v.size(); i++){
-        //S
-        s.S[i] = i;
-
-        //G partie adjacence
-        if(i < v.size() - 1){
-            int w = cut(v[i], v[i+1]);
-            s.G[s.size*i + i+1] = w;
-            s.G[s.size*(i+1) + i] = w;
-        }
-        //G partie poids sortant
-        s.G[s.size*s.size + i] = produit_sortant(v[i], computeA(v[i]));
-    }
-    return s;
-}
-
-/**
  * @brief computes the S.size()-1'th column of A
  * 
  * @param S The tensors in this state
@@ -344,22 +245,17 @@ void Split::init(const char* file){
 	delete[] Preamble;
 }
 
-void execfile(const char* file){
+void Split::execfile(const char* file){
     char path[100] = "../instances/";
     strcat(path, file);
     cout << "Starting initialisation on : " << file << endl;
-    solver.init(path);
-    if(range <= 0){
-        range = solver.size/2;
-        cout << range << endl;
-    }
+    init(path);
     cout << "End of initialisation" << endl;
     cout << "Starting solving" << endl;
     auto start = std::chrono::high_resolution_clock::now();
     cout << "Best cost : ";
-    //cout << solver.solve(solver.S) << endl;
-    cout << solver.splitRange(range) << endl;
-    //solver.display_order(solver.S);
+    cout << solve(S) << endl;
+    display_order(S);
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> tempsSeq = end-start;
@@ -367,7 +263,7 @@ void execfile(const char* file){
     cout << "--------------" << endl;
 }
 
-void execdir(const char* dir){
+void Split::execdir(const char* dir){
     char base[100] = "../instances/";
     strcat(base, dir);
     strcat(base, "/");
@@ -389,28 +285,3 @@ void execdir(const char* dir){
     closedir(dp);
 }
 
-int main(int argc, char* argv[]){
-
-    if(argc == 1){
-        cout << "Missing argument : instance file" << endl;
-    }else{
-        for(int i = 1; i < argc; i++){
-            if(*argv[i] == 'd'){
-                path = argv[i+1];
-                sf = false;
-                i++;
-            }else if(*argv[i] == 'r'){
-                range = atoi(argv[i+1]);
-                i++;
-            }else{
-                path = argv[i];
-            }
-        }   
-    }
-    if(sf){
-        execfile(path);
-    }else{
-        execdir(path);
-    }
-    return 0;
-}
