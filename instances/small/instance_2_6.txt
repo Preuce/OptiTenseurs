@@ -1,0 +1,14 @@
+c FILE: instance_2_6.txt
+c SOURCE: initInstances
+c min : 1
+c max : 9
+v 0  *4  1  *7  2
+v *2     *6     *5
+v 3  *6  4  *8  5
+p 6
+e 0 1 4
+e 0 3 2
+e 3 4 6
+e 1 2 7
+e 1 4 6
+e 4 5 8

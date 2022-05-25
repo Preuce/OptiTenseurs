@@ -1,10 +1,4 @@
 #include "SplitSolver.hpp"
-#include <math.h>
-#include <algorithm>
-#include <chrono>
-#include <dirent.h>
-#include <sys/types.h>
-#include <string.h>
 
 /**
  * @brief Solves a given state
@@ -12,8 +6,8 @@
  * @param S The tensors in this state
  * @return int the best cost for S
  */
-int Split::solve(Tab S){
-    int key = convert(S);
+Cost Split::solve(Tab S){
+    long int key = convert(S);
 
     if(C[key] == -1 && S.size() > 1){
         int cost;
@@ -21,7 +15,7 @@ int Split::solve(Tab S){
         Tab S1;
         Tab S2;
 
-        int cout_sortant = produit_sortant(S, computeA(S));
+        Cost cout_sortant = produit_sortant(S, computeA(S));
         
         //pour toutes les séparations de S
         do{
@@ -38,8 +32,9 @@ int Split::solve(Tab S){
                     S2.push_back(S[k]);
                 }
                 cost = solve(S1) + solve(S2) + cout_sortant*cut(S1, S2);
-                if(cost < C[key] || C[key] == -1){
+                if(cost < C[key] && cost > 0|| C[key] == -1){
                     C[key] = cost;
+                    //cout << cost << endl;
                     P1[key] = convert(S1);
                     P2[key] = convert(S2);
                 }
@@ -74,8 +69,8 @@ Tab Split::computeA(Tab S){
  * @param S2 A state
  * @return int 
  */
-int Split::cut(Tab S1, Tab S2){
-    int res = 1;
+Cost Split::cut(Tab S1, Tab S2){
+    Cost res = 1;
     for(int i : S1){
         for(int j : S2){
             res *= G[size*i + j];
@@ -91,8 +86,8 @@ int Split::cut(Tab S1, Tab S2){
  * @param A The external-weight of all tensors for each states
  * @return int 
  */
-int Split::produit_sortant(Tab S, Tab A){
-    int res = 1;
+Cost Split::produit_sortant(Tab S, Tab A){
+    Cost res = 1;
     for(int i : S){
         res *= A[size*(S.size()-1) + i];
     }
@@ -105,7 +100,7 @@ int Split::produit_sortant(Tab S, Tab A){
  * @param S The tensors in this state
  * @return int 
  */
-int Split::convert(Tab S){
+long int Split::convert(Tab S){
     int res = 0;
     for(int i : S){
         res += pow(2, i);
@@ -119,7 +114,7 @@ int Split::convert(Tab S){
  * @param key a code generated from a state using convert(S)
  * @return Tab 
  */
-Tab Split::recover(int key){
+Tab Split::recover(long int key){
     Tab res;
     for(int i = size; i >= 0; i--){
         int p = pow(2, i);
@@ -248,13 +243,12 @@ void Split::init(const char* file){
 void Split::execfile(const char* file){
     char path[100] = "../instances/";
     strcat(path, file);
-    cout << "Starting initialisation on : " << file << endl;
+    //cout << "Starting initialisation on : " << file << endl;
     init(path);
-    cout << "End of initialisation" << endl;
-    cout << "Starting solving" << endl;
+    //cout << "End of initialisation" << endl;
+    //cout << "Starting solving" << endl;
     auto start = std::chrono::high_resolution_clock::now();
-    cout << "Best cost : ";
-    cout << solve(S) << endl;
+    cout << "Best cost : " << solve(S) << endl;
     display_order(S);
 
     auto end = std::chrono::high_resolution_clock::now();
@@ -278,6 +272,7 @@ void Split::execdir(const char* dir){
             char path[100];
             strcpy(path, base);
             strcat(path, file->d_name);
+            cout << "FILE : " << path << endl;
             execfile(path);
         }
         file = readdir(dp);

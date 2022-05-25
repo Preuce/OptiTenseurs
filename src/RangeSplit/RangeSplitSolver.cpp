@@ -1,10 +1,4 @@
 #include "RangeSplitSolver.hpp"
-#include <math.h>
-#include <algorithm>
-#include <chrono>
-#include <dirent.h>
-#include <sys/types.h>
-#include <string.h>
 
 /**
  * @brief Solves a given state
@@ -12,16 +6,16 @@
  * @param S The tensors in this state
  * @return int the best cost for S
  */
-int SplitRange::solve(Tab S){
-    int key = convert(S);
+Cost SplitRange::solve(Tab S){
+    long int key = convert(S);
 
     if(C[key] == -1 && S.size() > 1){
-        int cost;
+        Cost cost;
         
         Tab S1;
         Tab S2;
 
-        int cout_sortant = produit_sortant(S, computeA(S));
+        Cost cout_sortant = produit_sortant(S, computeA(S));
         
         //pour toutes les séparations de S
         //do{
@@ -39,7 +33,7 @@ int SplitRange::solve(Tab S){
                     S2.push_back(S[k]);
                 }
                 cost = solverGreedy.solve(S1) + solve(S2) + cout_sortant*cut(S1, S2);
-                if(cost < C[key] || C[key] == -1){
+                if(cost < C[key] && cost > 0|| C[key] == -1){
                     C[key] = cost;
                     P1[key] = convert(S1); //TODO: pas bon
                     P2[key] = convert(S2);
@@ -51,43 +45,6 @@ int SplitRange::solve(Tab S){
         C[key] = solverGreedy.solve(p);
     }
     return C[key];
-}
-
-SplitRange SplitRange::rearrange(vector<Tab> v){
-    SplitRange s;
-    s.size = v.size();
-    s.S.clear();
-    s.S.resize(s.size);
-
-    s.G.clear();
-    s.G.resize(s.size*(s.size+1), 1);
-
-    s.A.clear();
-    s.A.resize(s.size*s.size, 1);
-
-    s.C.clear();
-    s.C.resize(pow(2, s.size), -1);
-
-    s.P1.clear();
-    s.P1.resize(pow(2, s.size), -1);
-
-    s.P2.clear();
-    s.P2.resize(pow(2,s.size), -1);
-
-    for(int i = 0; i < v.size(); i++){
-        //S
-        s.S[i] = i;
-
-        //G partie adjacence
-        if(i < v.size() - 1){
-            int w = cut(v[i], v[i+1]);
-            s.G[s.size*i + i+1] = w;
-            s.G[s.size*(i+1) + i] = w;
-        }
-        //G partie poids sortant
-        s.G[s.size*s.size + i] = produit_sortant(v[i], computeA(v[i]));
-    }
-    return s;
 }
 
 /**
@@ -118,8 +75,8 @@ Tab SplitRange::computeA(Tab S){
  * @param S2 A state
  * @return int 
  */
-int SplitRange::cut(Tab S1, Tab S2){
-    int res = 1;
+Cost SplitRange::cut(Tab S1, Tab S2){
+    Cost res = 1;
     for(int i : S1){
         for(int j : S2){
             res *= G[size*i + j];
@@ -136,8 +93,8 @@ int SplitRange::cut(Tab S1, Tab S2){
  * @param A The external-weight of all tensors for each states
  * @return int 
  */
-int SplitRange::produit_sortant(Tab S, Tab A){
-    int res = 1;
+Cost SplitRange::produit_sortant(Tab S, Tab A){
+    Cost res = 1;
     for(int i : S){
         res *= A[size*(S.size()-1) + i];
         res *= A[size*(S.size()-1) + i + size/2];
@@ -151,7 +108,7 @@ int SplitRange::produit_sortant(Tab S, Tab A){
  * @param S The tensors in this state
  * @return int 
  */
-int SplitRange::convert(Tab S){
+long int SplitRange::convert(Tab S){
     int res = 0;
     for(int i : S){
         if(i < size/2){
@@ -167,7 +124,7 @@ int SplitRange::convert(Tab S){
  * @param key a code generated from a state using convert(S)
  * @return Tab 
  */
-Tab SplitRange::recover(int key){ //TODO: repasser en "norme classique" pour display solverGreedy
+Tab SplitRange::recover(long int key){ //TODO: repasser en "norme classique" pour display solverGreedy
     Tab res;
     for(int i = size/2; i >= 0; i--){
         int p = pow(2, i);
@@ -191,7 +148,7 @@ Tab SplitRange::recover_full(Tab S){
 
 void SplitRange::display_order(Tab S){
     if(S.size() >= 1){
-        int key = convert(S);
+        long int key = convert(S);
         if(key != -1){
             Tab p1K = recover(P1[key]);
             solverGreedy.display_order(p1K);
@@ -308,16 +265,13 @@ void SplitRange::init(const char* file){
 	delete[] Preamble;
 }
 
-void SplitRange::execfile(const char* file){
+void SplitRange::execfile(const char* file, int d){
     char path[100] = "../instances/";
     strcat(path, file);
     cout << "Starting initialisation on : " << file << endl;
     init(path);
     solverGreedy.init(path);
-    if(delta <= 0){
-        delta = size/2;
-        //cout << delta << endl;
-    }
+    delta = d;
     cout << "End of initialisation" << endl;
     cout << "Starting solving" << endl;
     auto start = std::chrono::high_resolution_clock::now();
@@ -333,6 +287,36 @@ void SplitRange::execfile(const char* file){
     std::chrono::duration<double> tempsSeq = end-start;
     std::cout << std::scientific << "Temps : " << tempsSeq.count()<< "s" << std::endl;
     cout << "--------------" << endl;
+    delta = -1;
+}
+
+void SplitRange::execfile(const char* file){
+    char path[100] = "../instances/";
+    strcat(path, file);
+    //cout << "Starting initialisation on : " << file << endl;
+    init(path);
+    solverGreedy.init(path);
+    if(delta <= 0){
+        delta = size/2;
+        //cout << delta << endl;
+    }
+    //cout << "End of initialisation" << endl;
+    //cout << "Starting solving" << endl;
+    cout << "Range : " << delta << endl;
+    auto start = std::chrono::high_resolution_clock::now();
+    cout << "Best cost : ";
+    cout << solve(S) << endl;
+
+    /*for(int i = 0; i < P1.size(); i++){
+        cout << P1[i] << endl;
+    }*/
+    display_order(S);
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> tempsSeq = end-start;
+    std::cout << std::scientific << "Temps : " << tempsSeq.count()<< "s" << std::endl;
+    cout << "--------------" << endl;
+    delta = -1;
 }
 
 void SplitRange::execdir(const char* dir){
@@ -350,6 +334,7 @@ void SplitRange::execdir(const char* dir){
             char path[100];
             strcpy(path, base);
             strcat(path, file->d_name);
+            cout << "FILE : " << path << endl;
             execfile(path);
         }
         file = readdir(dp);

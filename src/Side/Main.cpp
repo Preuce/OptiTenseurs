@@ -1,7 +1,7 @@
-#include "SplitSolver.hpp"
+#include "SideExSolver.hpp"
 
 int main(int argc, char* argv[]){
-    Split solver;
+    MonoSide solver;
     switch (argc){
     case 1:
         cout << "Missing argument : instance file" << endl;
