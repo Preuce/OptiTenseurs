@@ -8,6 +8,7 @@ int main(int argc, char* argv[]){
         return -1;
         break;
     case 2:
+        display(argv[1]);
         solver.execfile(argv[1]);
         break;
     case 3:

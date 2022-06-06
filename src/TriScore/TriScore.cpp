@@ -1,11 +1,4 @@
 #include "TriScore.hpp"
-#include <algorithm>
-#include <math.h>
-#include <iostream>
-#include <string.h>
-#include <chrono>
-#include <dirent.h>
-#include <sys/types.h>
 
 /**
  * @brief solves G
@@ -190,6 +183,8 @@ void TriScore::init(const char* file){
         //cout << G[size*j + k] << endl;;
     }
 
+    sort_edges(E);
+
     sort(R.begin(), R.end(), [](pair<int, double> a, pair<int, double> b){return a.second > b.second;});
 
     fclose(fp);
@@ -247,13 +242,13 @@ void TriScore::execfile(const char* file){
     //cout << "Starting solving" << endl;
     auto start = std::chrono::high_resolution_clock::now();
     int c = solve();
-    cout << "Best cost : " << c << endl;
+    cout << "Best cost : " << c << '\n';
     cout << "Best order : ";
-    display_order();
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> tempsSeq = end-start;
-    std::cout << std::scientific << "Temps : " << tempsSeq.count()<< "s" << std::endl;
+    display_order();
+    std::cout << std::scientific << "Temps : " << tempsSeq.count()<< "s" << '\n';
     cout << "--------------" << endl;
 }
 
@@ -272,7 +267,8 @@ void TriScore::execdir(const char* dir){
             char path[100];
             strcpy(path, base);
             strcat(path, file->d_name);
-            cout << "FILE : " << path << endl;
+            //cout << "FILE : " << path << endl;
+            display(path);
             execfile(path);
         }
         file = readdir(dp);

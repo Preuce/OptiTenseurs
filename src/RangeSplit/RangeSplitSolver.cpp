@@ -310,10 +310,10 @@ void SplitRange::execfile(const char* file){
     /*for(int i = 0; i < P1.size(); i++){
         cout << P1[i] << endl;
     }*/
-    display_order(S);
-
+    
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> tempsSeq = end-start;
+    display_order(S);
     std::cout << std::scientific << "Temps : " << tempsSeq.count()<< "s" << std::endl;
     cout << "--------------" << endl;
     delta = -1;

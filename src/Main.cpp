@@ -1,85 +1,17 @@
 #include "Matrice/MatrixSolver.hpp"
 #include "RangeSplit/RangeSplitSolver.hpp"
-#include "Side/SideExSolver.hpp"
+//#include "SideRec/SideExSolver.hpp"
+#include "SideIter/SideExSolver.hpp"
 #include "Split/SplitSolver.hpp"
 #include "TriScore/TriScore.hpp"
+#include "SimpleGreedy/SimpleG.hpp"
 
 MatrixSolver matrix;
 SplitRange splitrange;
-MonoSide side;
+SimpleG simpleg;
+SideIter sideiter;
 Split split;
 TriScore triscore;
-
-void display(const char* file){
-    cout << "---------------" << endl;
-    char path[100] = "../instances/";
-    strcat(path, file);
-    string filename(path);
-    cout << file << endl;
-    string line;
-
-    string red("\033[0;31m");
-    string reset("\033[0m");
-    
-    ifstream input_file(filename);
-    if (!input_file.is_open()) {
-        cerr << "Could not open the file - '"
-             << filename << "'" << endl;
-        exit(-1);
-    }else{
-        while (getline(input_file, line) && line[0] != 'e'){
-            for(auto& c : line){
-                switch(c){
-                    case '*':
-                        cout << red;
-                        break;
-                    case ' ':
-                        cout << reset << c;
-                        break;
-                    case '\n':
-                        cout << reset << c;
-                        break;
-                    case '\0':
-                        cout << reset << c;
-                        break;
-                    case 'v':
-                        cout << reset;
-                        break;
-                    default:
-                        cout << c;
-                        break;
-                }
-            }
-            cout << endl;
-        }
-    }
-
-    input_file.close();
-    cout << "---------------" << endl;
-}
-
-void displaydir(const char* dir){
-    char base[100] = "../instances/";
-    strcat(base, dir);
-    strcat(base, "/");
-    DIR* dp = NULL;
-    struct dirent *file = NULL;
-    dp = opendir(base);
-    
-    file = readdir(dp);
-    
-    while(file != NULL){
-        if(file->d_name[0] != '.'){
-            char path[100];
-            strcpy(path, base);
-            strcat(path, file->d_name);
-
-            display(dir);
-        }
-        file = readdir(dp);
-    }
-    closedir(dp);
-}
 
 void execfile(const char* file){
     display(file);
@@ -87,17 +19,20 @@ void execfile(const char* file){
     //cout << "--- Matrix ---" << endl;
     //matrix.execfile(file);
 
-    //cout << "--- Split ---" << endl; 
-    //split.execfile(file);
+    cout << "--- Split ---" << '\n'; 
+    split.execfile(file);
 
-    cout << "--- SplitRange ---" << endl;
+    cout << "--- SimpleGreedy ---" << '\n';
+    simpleg.execfile(file);
+
+    cout << "--- SplitRange ---" << '\n';
     splitrange.delta = 3;
     splitrange.execfile(file);
 
-    cout << "--- Side ---" << endl;
-    side.execfile(file);
+    cout << "--- SideIter ---" << '\n';
+    sideiter.execfile(file);
 
-    cout << "--- TriScore ---" << endl;
+    cout << "--- TriScore ---" << '\n';
     triscore.execfile(file);
 }
 
@@ -136,11 +71,14 @@ int main(int argc, char* argv[]){
     case 3:
         if(*argv[1] == 'd'){
             execdir(argv[2]);
-        //}else if(argv[1] == c_str('vd')){
-        //    displaydir(argv[2]);
+        }else if(strcmp(argv[1], "vd")==0){
+            display_dir(argv[2]);
         }else if(*argv[1] == 'v'){
             display(argv[2]);
-        }
+        }/*else if(*argv[1] == 't'){
+            //fonction de test sur argv[2]
+        }*/
+
         break;
     default:
         cout << "Error : check arguments list" << endl;

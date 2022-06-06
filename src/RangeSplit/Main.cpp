@@ -22,6 +22,7 @@ int main(int argc, char* argv[]){
         }   
     }
     if(sf){
+        display(path);
         solver.execfile(path);
     }else{
         solver.execdir(path);

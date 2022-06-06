@@ -1,7 +1,6 @@
 #ifndef TRISCORE_HPP
 #define TRISCORE_HPP
 #include "../Components.hpp"
-#include <vector>
 
 class TriScore{
     public:
@@ -11,9 +10,8 @@ class TriScore{
     vector<pair<int, int>> E; //la liste des arètes
     Tab V; //la correspondance entre les sommets (tkt)
     vector<pair<int, int>> order;
+
     //G : matrice d'adjacence, où chaque case G[size*i + j] contient le poids de j par rapport à i (wj si reliés, 0 si soi-même, 1 sinon)
-    //pb : mettre à jour G
-    //pour tout j tel que G[size*i + j] > 1, on multiplie la ligne G[size*i] avec la ligne G[size*j], G[size*j + i] passe à 1
 
     Cost solve();
     //met à jour la liste des score après suppression d'une arète
