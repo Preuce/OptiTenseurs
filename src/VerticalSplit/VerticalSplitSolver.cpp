@@ -1,4 +1,4 @@
-#include "RangeSplitSolver.hpp"
+#include "VerticalSplitSolver.hpp"
 
 /**
  * @brief Solves a given state
@@ -165,31 +165,6 @@ void SplitRange::display_order(Tab S){
     }
 }
 
-void SplitRange::get_size(char* Preamble){
-	char c;
-	char * pp = Preamble;
-	int stop = 0;
-	//tmp = (char *)calloc(100, sizeof(char));
-	int nbT;
-	
-	while(!stop && (c = *pp++) != '\0'){
-		switch (c){
-            case 'c':
-                while ((c = *pp++) != '\n' && c != '\0');
-                break;
-                
-            case 'p':
-                sscanf(pp, "%d\n", &nbT);
-                stop = 1;
-                break;
-                
-            default:
-                break;
-        }
-	}
-	size = nbT;
-}
-
 void SplitRange::init(const char* file){
     //hardcoder les poids voisinant les sommets dans un fichier texte
     S.clear();
@@ -199,70 +174,38 @@ void SplitRange::init(const char* file){
     P1.clear();
     P2.clear();
 
-    int MAX_PREAMBLE = 4000;
-	char* Preamble = new char [MAX_PREAMBLE];
-
-    int c, oc;
-	char* pp = Preamble;
-
+    ifstream ifile(file);
+    string line;
     int i, j, w;
-	FILE* fp;
-
-    if((fp=fopen(file,"r"))==NULL ){ 
-        printf("ERROR: Cannot open infile\n"); 
-        exit(10); 
-    }
-
-    for(oc = '\0';(c = fgetc(fp)) != EOF && (oc != '\n' || c != 'e'); 
-    oc = *pp++ = c);
-
-    ungetc(c, fp); 
-	*pp = '\0';
-
-    get_size(Preamble);
-
-    S.resize(size/2);
-    //cout << "S : " << S.size() << endl;
-    G.resize(size*(size+1), 1);
-    //cout << "G : " << G.size() << endl;
-    A.resize(size*size, 1);
-    //cout << "A : " << A.size() << endl;
-    C.resize(pow(2, size/2), -1);
-    //cout << "C : " << C.size() << endl;
-    P1.resize(pow(2, size/2), -1);
-    P2.resize(pow(2,size/2), -1);
-    //cout << "P : " << P.size() << endl;
-
-    for(int k = 0; k < size/2; k ++){
-        S[k] = k;
-    }
-	
-	while ((c = fgetc(fp)) != EOF){
-		switch (c){
+    while(getline(ifile, line)){
+        istringstream flux(&line[2]);
+        switch(line[0]){
+            case 'p':
+                size = atoi(&line[2]);
+                S.resize(size/2);
+                G.resize(size*(size+1), 1);
+                A.resize(size*size, 1);
+                C.resize(pow(2, size/2), -1);
+                P1.resize(pow(2, size/2), -1);
+                P2.resize(pow(2,size/2), -1);
+            break;
             case 'e':
-                if (!fscanf(fp, "%d %d %d", &i, &j, &w)){ 
-                    printf("ERROR: corrupted inputfile\n"); 
-                    exit(10);
-                }
+                flux >> i >> j >> w;
                 G[size*i + j] = w;
                 G[size*j + i] = w;
-                break;
-                
-            case '\n':
-                
+                G[size*size + i] *= w;
+                G[size*size + j] *= w;
+            break;
             default:
-                break;
-        }
-	}
-
-    for(int i = 0; i < size; i++){
-        for(int j = 0; j < size; j++){
-            G[size*size + i] *= G[size*j + i];
+            break;
         }
     }
 
-    fclose(fp);
-	delete[] Preamble;
+    for(int i = 0; i < size/2; i ++){
+        S[i] = i;
+    }
+
+    solverGreedy.init(file);
 }
 
 void SplitRange::execfile(const char* file, int d){
@@ -270,21 +213,17 @@ void SplitRange::execfile(const char* file, int d){
     strcat(path, file);
     cout << "Starting initialisation on : " << file << endl;
     init(path);
-    solverGreedy.init(path);
+    //solverGreedy.init(path);
     delta = d;
-    cout << "End of initialisation" << endl;
-    cout << "Starting solving" << endl;
+    //cout << "End of initialisation" << endl;
+    //cout << "Starting solving" << endl;
     auto start = std::chrono::high_resolution_clock::now();
     cout << "Best cost : ";
-    cout << solve(S) << endl;
-
-    /*for(int i = 0; i < P1.size(); i++){
-        cout << P1[i] << endl;
-    }*/
-    display_order(S);
-
+    cout << solve(S) << '\n';
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> tempsSeq = end-start;
+    cout << "Best order : ";
+    display_order(S);
     std::cout << std::scientific << "Temps : " << tempsSeq.count()<< "s" << std::endl;
     cout << "--------------" << endl;
     delta = -1;
@@ -295,24 +234,20 @@ void SplitRange::execfile(const char* file){
     strcat(path, file);
     //cout << "Starting initialisation on : " << file << endl;
     init(path);
-    solverGreedy.init(path);
+    //solverGreedy.init(path);
     if(delta <= 0){
-        delta = size/2;
+        delta = min(3, size/2);
         //cout << delta << endl;
     }
     //cout << "End of initialisation" << endl;
     //cout << "Starting solving" << endl;
-    cout << "Range : " << delta << endl;
+    cout << "Range : " << delta << '\n';
     auto start = std::chrono::high_resolution_clock::now();
     cout << "Best cost : ";
-    cout << solve(S) << endl;
-
-    /*for(int i = 0; i < P1.size(); i++){
-        cout << P1[i] << endl;
-    }*/
-    
+    cout << solve(S) << '\n';
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> tempsSeq = end-start;
+    cout << "Best order : ";
     display_order(S);
     std::cout << std::scientific << "Temps : " << tempsSeq.count()<< "s" << std::endl;
     cout << "--------------" << endl;
@@ -334,7 +269,7 @@ void SplitRange::execdir(const char* dir){
             char path[100];
             strcpy(path, base);
             strcat(path, file->d_name);
-            cout << "FILE : " << path << endl;
+            display(path);
             execfile(path);
         }
         file = readdir(dp);

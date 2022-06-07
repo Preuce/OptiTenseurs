@@ -154,103 +154,45 @@ void SideIter::display_order(int s, int k){
     }
 }
 
-void SideIter::get_size(char* Preamble){
-
-	char c;
-	char * pp = Preamble;
-	int stop = 0;
-	//tmp = (char *)calloc(100, sizeof(char));
-	int nbT;
-	
-	while (!stop && (c = *pp++) != '\0'){
-		switch (c){
-            case 'c':
-                while ((c = *pp++) != '\n' && c != '\0');
-                break;
-                
-            case 'p':
-                sscanf(pp, "%d\n", &nbT);
-                stop = 1;
-                break;
-                
-            default:
-                break;
-        }
-	}
-	size = nbT;
-}
-
 void SideIter::init(const char* file){
     //hardcoder les poids voisinant les sommets dans un fichier texte
     G.clear();
     A.clear();
     P.clear();
-
     C.clear();
     T.clear();
     O.clear();
     Z.clear();
 
-    int MAX_PREAMBLE = 4000;
-	char* Preamble = new char [MAX_PREAMBLE];
-
-    int c, oc;
-	char* pp = Preamble;
-
+    ifstream ifile(file);
+    string line;
     int i, j, w;
-	FILE* fp;
-
-    if((fp=fopen(file,"r"))==NULL ){ 
-        printf("ERROR: Cannot open infile\n"); 
-        exit(10); 
-    }
-
-    for(oc = '\0';(c = fgetc(fp)) != EOF && (oc != '\n' || c != 'e'); 
-    oc = *pp++ = c);
-
-    ungetc(c, fp); 
-	*pp = '\0';
-
-    get_size(Preamble);
-
-    G.resize(size*(size+1), 1);
-    
-    A.resize(size, 1);
-
-    P.resize(size, -1);
-    
-    C.resize(2*(size/2)-1, 0); //tableau des coûts
-
-    T.resize(2*(size/2)-1, 1); //tableau des t
-
-    O.resize(size*size/4, {-1, -1});
-    Z.resize(size/2, -1);
-
-	while ((c = fgetc(fp)) != EOF){
-		switch (c){
+    while(getline(ifile, line)){
+        istringstream flux(&line[2]);
+        switch(line[0]){
+            case 'p':
+                size = atoi(&line[2]);
+                G.resize(size*(size+1), 1);
+                A.resize(size, 1);
+                P.resize(size, -1);
+                C.resize(2*(size/2)-1, 0); //tableau des coûts
+                T.resize(2*(size/2)-1, 1); //tableau des t
+                O.resize(size*size/4, {-1, -1});
+                Z.resize(size/2, -1);
+            break;
             case 'e':
-                if (!fscanf(fp, "%d %d %d", &i, &j, &w)){ 
-                    printf("ERROR: corrupted inputfile\n"); 
-                    exit(10);
-                }
+                flux >> i >> j >> w;
                 G[size*i + j] = w;
                 G[size*j + i] = w;
                 G[size*size + i] *= w;
                 G[size*size + j] *= w;
                 A[i] *= w;
                 A[j] *= w;
-
-                break;
-                
-            case '\n':
-                
+            break;
             default:
-                break;
+            break;
         }
-	}
-
-    fclose(fp);
-	delete[] Preamble;
+    }
 }
 
 void SideIter::execfile(const char* file){

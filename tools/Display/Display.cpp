@@ -18,6 +18,7 @@ void display2(const char* file){
              << filename << "'" << endl;
         exit(-1);
     }else{
+        int n = 0;
         while (getline(input_file, line) && line[0] != 'e'){
             for(auto& c : line){
                 switch(c){
@@ -68,65 +69,40 @@ void display(const char* file){
         exit(-1);
     }
 
-    char* mot;
-    int n_e = 0;
-    int n_p = 0;
+    char mot[200];
+    int n = 0;
     int nL = 0;
-    int padding[100] = {0}; //should be enough (I need size/2-1 slots)
-    //you start with a spacing of 4, and add 1 for each extra character
-
-    string output[3];
-    //first step is filling the strings and getting the right padding
-
-    //preamble
-    while(getline(input_file, line) && line[0] != 'v'){
+    while(getline(input_file, line) && line[0] != 'e'){
         if(line.size() > 2){
-            cout << &line[2] << '\n';
-        }
-    }
-
-    //view
-    do{
-        n_p = 0;
-        istringstream flux(&line[2]);
-        while(flux >> mot){
-            int size;
-            if(mot[0] == '*'){
-                output[nL].append(red + &mot[1] + blue + "(" + to_string(n_e) + ")");
-                size = strlen(&mot[1]) + to_string(n_e).size() + 1;
-                n_e++;
-            }else{
-                output[nL].append(mot);
-                size = strlen(mot) - 1;
+            istringstream flux(&line[2]);
+            switch(line[0]){
+                case 'v':
+                   while(flux >> mot){
+                        if(mot[0] == '*'){
+                            char* padding;
+                            if(nL == 1){
+                                padding = "       ";
+                            }else{
+                                padding = "   ";
+                            }
+                            cout << red << &mot[1] << blue << "(" << n << ")" << padding;
+                            n++;
+                        }else{
+                            cout << reset << mot << "   ";
+                        }
+                    }
+                    nL++;
+                break;
+                case 'p':
+                    cout << "Sommets : " << &line[2];
+                break;
+                default:
+                    cout << &line[2];
+                break;
             }
-            padding[n_p] = max(padding[n_p], size);
-            output[nL].append(" ");
+            cout << '\n';
         }
-        n_p++;
-        nL++;
-    }while(getline(input_file, line) && line[0] == 'v');
-
-    for(string s : output){
-
     }
-    //parameters and infos
-    do{
-        switch(line[0]){
-            case 'p':
-                cout << "Size : " << &line[2] << '\n';
-                break;
-            case 'r':
-                if(line.size() > 2){
-                    cout << "Best cost : " << &line[2] << '\n';
-                }
-                break;
-            case 'o':
-                if(line.size() > 2){
-                    cout << "Best order : " << &line[2] << '\n';
-                }
-        }
-    }while(getline(input_file, line) && line[0] != 'e');
-    
 }
 
 void display_dir(const char* dir){

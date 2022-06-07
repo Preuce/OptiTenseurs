@@ -1,4 +1,4 @@
-#include "RangeSplitSolver.hpp"
+#include "VerticalSplitSolver.hpp"
 
 int main(int argc, char* argv[]){
     SplitRange solver;

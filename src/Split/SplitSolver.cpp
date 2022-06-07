@@ -126,7 +126,7 @@ Tab Split::recover(long int key){
     return res;
 }
 
-void Split::display_order(Tab S){//pas fonctionnel
+void Split::display_order(Tab S){//dégueulasse
     if(S.size() > 1){
         int key = convert(S);
         display_order(recover(P1[key]));
@@ -139,34 +139,7 @@ void Split::display_order(Tab S){//pas fonctionnel
     }
 }
 
-void Split::get_size(char* Preamble){
-
-	char c;
-	char * pp = Preamble;
-	int stop = 0;
-	//tmp = (char *)calloc(100, sizeof(char));
-	int nbT;
-	
-	while (!stop && (c = *pp++) != '\0'){
-		switch (c){
-            case 'c':
-                while ((c = *pp++) != '\n' && c != '\0');
-                break;
-                
-            case 'p':
-                sscanf(pp, "%d\n", &nbT);
-                stop = 1;
-                break;
-                
-            default:
-                break;
-        }
-	}
-	size = nbT;
-}
-
 void Split::init(const char* file){
-    //hardcoder les poids voisinant les sommets dans un fichier texte
     S.clear();
     G.clear();
     A.clear();
@@ -174,70 +147,37 @@ void Split::init(const char* file){
     P1.clear();
     P2.clear();
 
-    int MAX_PREAMBLE = 4000;
-	char* Preamble = new char [MAX_PREAMBLE];
-
-    int c, oc;
-	char* pp = Preamble;
-
+    ifstream ifile(file);
+    string line;
     int i, j, w;
-	FILE* fp;
-
-    if((fp=fopen(file,"r"))==NULL ){ 
-        printf("ERROR: Cannot open infile\n"); 
-        exit(10); 
+    while(getline(ifile, line)){
+        istringstream flux(&line[2]);
+        switch(line[0]){
+            case 'p':
+                size = atoi(&line[2]);
+                G.resize(size*size, 1);
+                S.resize(size);
+                G.resize(size*(size+1), 1);
+                A.resize(size*size, 1);
+                C.resize(pow(2, size), -1);
+                P1.resize(pow(2, size), -1);
+                P2.resize(pow(2,size), -1);
+            break;
+            case 'e':
+                flux >> i >> j >> w;
+                G[size*i + j] = w;
+                G[size*j + i] = w;
+                G[size*size + i] *= w;
+                G[size*size + j] *= w;
+            break;
+            default:
+            break;
+        }
     }
-
-    for(oc = '\0';(c = fgetc(fp)) != EOF && (oc != '\n' || c != 'e'); 
-    oc = *pp++ = c);
-
-    ungetc(c, fp); 
-	*pp = '\0';
-
-    get_size(Preamble);
-
-    S.resize(size);
-    //cout << "S : " << S.size() << endl;
-    G.resize(size*(size+1), 1);
-    //cout << "G : " << G.size() << endl;
-    A.resize(size*size, 1);
-    //cout << "A : " << A.size() << endl;
-    C.resize(pow(2, size), -1);
-    //cout << "C : " << C.size() << endl;
-    P1.resize(pow(2, size), -1);
-    P2.resize(pow(2,size), -1);
-    //cout << "P : " << P.size() << endl;
 
     for(int k = 0; k < size; k ++){
         S[k] = k;
     }
-	
-	while ((c = fgetc(fp)) != EOF){
-		switch (c){
-            case 'e':
-                if (!fscanf(fp, "%d %d %d", &i, &j, &w)){ 
-                    printf("ERROR: corrupted inputfile\n"); 
-                    exit(10);
-                }
-                G[size*i + j] = w;
-                G[size*j + i] = w;
-                break;
-                
-            case '\n':
-                
-            default:
-                break;
-        }
-	}
-
-    for(int i = 0; i < size; i++){
-        for(int j = 0; j < size; j++){
-            G[size*size + i] *= G[size*j + i];
-        }
-    }
-
-    fclose(fp);
-	delete[] Preamble;
 }
 
 void Split::execfile(const char* file){
@@ -272,7 +212,7 @@ void Split::execdir(const char* dir){
             char path[100];
             strcpy(path, base);
             strcat(path, file->d_name);
-            cout << "FILE : " << path << endl;
+            display(path);
             execfile(path);
         }
         file = readdir(dp);

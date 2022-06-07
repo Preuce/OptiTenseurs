@@ -2,7 +2,7 @@
 #define SIDEEXSOLVER_HPP
 #include "../Components.hpp"
 
-class SideRec{
+class SLim{
     public:
     int size;
     Tab A; //les poids sortants pour un état s donné

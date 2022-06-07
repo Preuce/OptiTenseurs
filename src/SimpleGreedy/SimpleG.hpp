@@ -14,24 +14,26 @@ class SouG{
 
 class SimpleG{
     public:
-    void solveAlt(SouG sg, Tab& A);
 
     int size;
+    SouG sgref;
     vector<pair<int, int>> E; //liste des arêtes (fixe)
     Tab G; //size*(size+1)
     Tab S;
     Tab O;
+    Tab C;
 
     SouG getSG(){SouG sg; sg.set(S, G, vector<int> (size, -1)); return sg;}
     Cost contract(int i, SouG& sg);
+    void cheap_contract(int i, SouG& sg);
 
-    Cost solve(SouG sg);
+    Cost solve(SouG& sg);
 
-    Tab computeA(Tab S);
-    Cost follow_order(Tab S);
-    void display_order();
+    int get_key(Tab S);
+    Tab get_Tab(int key);
 
-    void get_size(char* preamble);
+    void display_order(int key);
+
     void init(const char* file);
 
     void execfile(const char* file);

@@ -24,7 +24,6 @@ class SideIter{
     void restoreA(int s);
     void display_order(int s, int k);
 
-    void get_size(char* Preamble);
     void init(const char* file);
 
     void execfile(const char* file);

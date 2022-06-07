@@ -1,7 +1,7 @@
-#include "SideExSolver.hpp"
+#include "SideLimSolver.hpp"
 
 int main(int argc, char* argv[]){
-    SideRec solver;
+    SLim solver;
     switch (argc){
     case 1:
         cout << "Missing argument : instance file" << endl;

@@ -1,6 +1,6 @@
-#include "SideExSolver.hpp"
+#include "SideLimSolver.hpp"
 
-Cost SideRec::solve(int s, int i){
+Cost SLim::solve(int s, int i){
     int ofs = s*s + i;
     
     if(s < size/2 - 1 && C[ofs] == -1){
@@ -46,7 +46,7 @@ Cost SideRec::solve(int s, int i){
  * 
  * @param s 
  */
-void SideRec::computeA(int s){
+void SLim::computeA(int s){
     int i = s;
     int ofs = size*s;
     
@@ -59,7 +59,7 @@ void SideRec::computeA(int s){
  * 
  * @param s 
  */
-void SideRec::restoreA(int s){
+void SLim::restoreA(int s){
     int ofs = size*s;
 
     A[ofs + s] = G[size*size + s];
@@ -74,7 +74,7 @@ void SideRec::restoreA(int s){
  * @param s 
  * @return Cost 
  */
-Cost SideRec::contract(int x, int s){
+Cost SLim::contract(int x, int s){
     computeA(s);
     int i = s;
     int ofs = size*s;
@@ -154,7 +154,7 @@ Cost SideRec::contract(int x, int s){
  * @param s 
  * @param i 
  */
-void SideRec::display_order(int s, int i){
+void SLim::display_order(int s, int i){
     int ofs = s*s + i;
     switch(P[ofs]){
         case -1:
@@ -171,7 +171,7 @@ void SideRec::display_order(int s, int i){
     cout << endl;
 }
 
-void SideRec::get_size(char* Preamble){
+void SLim::get_size(char* Preamble){
 
 	char c;
 	char * pp = Preamble;
@@ -197,7 +197,7 @@ void SideRec::get_size(char* Preamble){
 	size = nbT;
 }
 
-void SideRec::init(const char* file){
+void SLim::init(const char* file){
     //hardcoder les poids voisinant les sommets dans un fichier texte
     G.clear();
     A.clear();
@@ -281,7 +281,7 @@ void SideRec::init(const char* file){
 	delete[] Preamble;
 }
 
-void SideRec::execfile(const char* file){
+void SLim::execfile(const char* file){
     char path[100] = "../instances/";
     strcat(path, file);
     //cout << "Starting initialisation on : " << file << endl;
@@ -304,7 +304,7 @@ void SideRec::execfile(const char* file){
     cout << "--------------" << endl;
 }
 
-void SideRec::execdir(const char* dir){
+void SLim::execdir(const char* dir){
     char base[100] = "../instances/";
     strcat(base, dir);
     strcat(base, "/");

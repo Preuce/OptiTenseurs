@@ -1,23 +1,47 @@
 #include "SimpleG.hpp"
 
-Cost SimpleG::solve(SouG sg){
-    Cost cost = 0;
-    if(sg.S.size() > 0){
-        for(int i = 0; i < sg.S.size(); i++){
-            SouG sg2 = sg;
-            sg2.S.erase(sg2.S.begin() + i);
-            int c = contract(sg.S[i], sg2);
-            c += solve(sg2);
+Cost SimpleG::solve(SouG& sg){
+    int key = get_key(sg.S);
+    SouG sgref = sg; 
 
-            if((c < cost || cost == 0) && c > 0){
-                cost = c;
-                O[E.size()-sg.S.size()] = sg.S[i];
+    if(sg.S.size() > 1 && C[key] == -1){
+        for(int i = 0; i < sgref.S.size(); i++){
+            SouG sg2 = sgref; //on le copie
+            int bestE = sg2.S[i];
+            sg2.S.erase(sg2.S.begin() + i);
+
+            Cost cost = solve(sg2);
+            cost += contract(sgref.S[i], sg2);
+            if((cost < C[key] || C[key] == -1) && cost > 0){
+                C[key] = cost;
+                O[key] = bestE;
+                sg.G = sg2.G; //mise à jour de SG pour le faire remonter
+                sg.V = sg2.V;
             }
         }
+    }else if(C[key] == -1){
+        C[key] = contract(sg.S[0], sg);
+        O[key] = sg.S[0];
+    }else{
+        //cas où C[key] est déjà calculé
+        //on connait l'ensemble des arêtes qui ont été contractées : sg.S
+        //on peut bruteforce les S.size() contractions, puisqu'on a déjà le meilleur coût on se fiche de l'ordre
+        for(int i : sg.S){
+            cheap_contract(i, sg);
+        }
+        //pas giga opti mais ça passe
     }
-    return cost;
+
+    return C[key];
 }
 
+/**
+ * @brief computes the cost of a contraction and modifies the sub-graph (V and G)
+ * 
+ * @param i the index (in E) of the contracted edge
+ * @param sg the sub-graph
+ * @return Cost 
+ */
 Cost SimpleG::contract(int i, SouG& sg){
     int a = sg.C(E[i].first);
     int b = sg.C(E[i].second);
@@ -46,6 +70,33 @@ Cost SimpleG::contract(int i, SouG& sg){
     }
 }
 
+/**
+ * @brief same as contract, but doesn't compute the cost (only updates G and V)
+ * 
+ * @param i 
+ * @param sg 
+ */
+void SimpleG::cheap_contract(int i, SouG& sg){
+    int a = sg.C(E[i].first);
+    int b = sg.C(E[i].second);
+
+    if(a != b){
+        for(int j = 0; j < size; j++){
+            sg.G[size*a + j] *= sg.G[size*b + j];
+            sg.G[size*b + j] = 0;
+            sg.G[size*j + b] = 0;
+            sg.G[size*j + a] = sg.G[size*a + j];
+        }
+        sg.V[b] = a;
+    }
+}
+
+/**
+ * @brief retrieves the vertex thats is the reference for i in the graph
+ * 
+ * @param i a vertex
+ * @return int 
+ */
 int SouG::C(int i){
     while(V[i] != -1){
         i = V[i];
@@ -53,35 +104,37 @@ int SouG::C(int i){
     return i;
 }
 
-void SimpleG::display_order(){
-    for(int i = O.size()-1; i >= 0; i--){
-        cout << O[i] << " - ";
+/**
+ * @brief encodes a set of edges as a unique int key
+ * 
+ * @param S 
+ * @return int 
+ */
+int SimpleG::get_key(Tab S){
+    int res = 0;
+    for(int i : S){
+        res += pow(2, i);
     }
-    cout << '\n';
+    return res-1;
 }
 
-void SimpleG::get_size(char* Preamble){
-	char c;
-	char * pp = Preamble;
-	int stop = 0;
-	int nbT;
-	
-	while (!stop && (c = *pp++) != '\0'){
-		switch (c){
-            case 'c':
-                while ((c = *pp++) != '\n' && c != '\0');
-                break;
-                
-            case 'p':
-                sscanf(pp, "%d\n", &nbT);
-                stop = 1;
-                break;
-                
-            default:
-                break;
-        }
-	}
-    size = nbT;
+/**
+ * @brief displays the best order given a starting state encoded as a key
+ * 
+ * @param key 
+ */
+void SimpleG::display_order(int key){
+    int i = O[key]; //i = la meilleure arête à contracter pour l'état key-2^i + 1
+    int next = key-pow(2, i);
+    if(key == get_key(S)){
+        display_order(next);
+        cout << i << '\n';
+    }else if(next >= 0){
+        display_order(next);
+        cout << i << " - ";
+    }else if(next == -1){
+        cout << i << " - ";
+    }
 }
 
 void SimpleG::init(const char* file){
@@ -89,52 +142,32 @@ void SimpleG::init(const char* file){
     G.clear();
     E.clear();
     O.clear();
+    C.clear();
+    S.clear();
 
-    int MAX_PREAMBLE = 4000;
-	char* Preamble = new char [MAX_PREAMBLE];
-
-    int c, oc;
-	char* pp = Preamble;
-
+    ifstream ifile(file);
+    string line;
     int i, j, w;
-	FILE* fp;
-
-    if((fp=fopen(file,"r"))==NULL ){ 
-        printf("ERROR: Cannot open infile\n"); 
-        exit(10); 
-    }
-
-    for(oc = '\0';(c = fgetc(fp)) != EOF && (oc != '\n' || c != 'e'); 
-    oc = *pp++ = c);
-
-    ungetc(c, fp); 
-	*pp = '\0';
-
-    get_size(Preamble);
-
-    G.resize(size*size, 1);
-    S.resize(3*size/2 - 2);
-    O.resize(3*size/2 - 2, -1);
-    
-	while ((c = fgetc(fp)) != EOF){
-		switch (c){
+    while(getline(ifile, line)){
+        istringstream flux(&line[2]);
+        switch(line[0]){
+            case 'p':
+                size = atoi(&line[2]);
+                G.resize(size*size, 1);
+                S.resize(3*size/2 - 2);
+                O.resize(pow(2, 3*size/2-2)-1, -1);
+                C.resize(pow(2, 3*size/2-2)-1, -1);
+            break;
             case 'e':
-                if (!fscanf(fp, "%d %d %d", &i, &j, &w)){ 
-                    printf("ERROR: corrupted inputfile\n"); 
-                    exit(10);
-                }
+                flux >> i >> j >> w;
                 E.push_back(make_pair(i, j));
                 G[size*i + j] = w;
                 G[size*j + i] = w;
-                break;
-                
-            case '\n':
-                
+            break;
             default:
-                break;
+            break;
         }
-	}
-
+    }
     for(int i = 0; i < size; i ++){
         G[size*i + i] = 0;
     }
@@ -145,8 +178,7 @@ void SimpleG::init(const char* file){
         S[i] = i;
     }
 
-    fclose(fp);
-	delete[] Preamble;
+    sgref = getSG();
 }
 
 void SimpleG::execfile(const char* file){
@@ -156,38 +188,15 @@ void SimpleG::execfile(const char* file){
     init(path);
     //cout << "End of initialisation" << endl;
     //cout << "Starting solving" << endl;
-    
-    /*auto start = std::chrono::high_resolution_clock::now();
-    int c = solve(getSG());
+    auto start = std::chrono::high_resolution_clock::now();
+    int c = solve(sgref);
     cout << "Best cost : " << c << endl;
-    cout << "Best order : ";
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> tempsSeq = end-start;
-    display_order();
+    cout << "Best order : ";
+    display_order(get_key(S));
     std::cout << std::scientific << "Temps : " << tempsSeq.count()<< "s" << std::endl;
-    */
-    /*SouG sg = getSG();
-    sg.S = {0, 5, 4, 6, 1, 2, 3};
-    Tab A (sg.S.size());
-    solveAlt(sg, A);
-    for(int i : A){
-        cout << i << '\n';
-    }*/
-    cout << solve(getSG()) << '\n';
-    display_order();
-    /*for(int i : O){
-        cout << i << '\n';
-    }*/
     cout << "--------------" << endl;
-}
-
-void SimpleG::solveAlt(SouG sg, Tab& A){
-    if(sg.S.size() > 0){
-        SouG sg2 = sg;
-        sg2.S.erase(sg2.S.begin());
-        solveAlt(sg2, A);
-        A[E.size() - sg.S.size()] = sg.S[0];
-    }
 }
 
 void SimpleG::execdir(const char* dir){
@@ -205,7 +214,8 @@ void SimpleG::execdir(const char* dir){
             char path[100];
             strcpy(path, base);
             strcat(path, file->d_name);
-            cout << "FILE : " << path << endl;
+            //cout << "FILE : " << path << endl;
+            display(path);
             execfile(path);
         }
         file = readdir(dp);

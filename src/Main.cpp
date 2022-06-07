@@ -1,5 +1,5 @@
 #include "Matrice/MatrixSolver.hpp"
-#include "RangeSplit/RangeSplitSolver.hpp"
+#include "VerticalSplit/VerticalSplitSolver.hpp"
 //#include "SideRec/SideExSolver.hpp"
 #include "SideIter/SideExSolver.hpp"
 #include "Split/SplitSolver.hpp"
@@ -19,8 +19,8 @@ void execfile(const char* file){
     //cout << "--- Matrix ---" << endl;
     //matrix.execfile(file);
 
-    cout << "--- Split ---" << '\n'; 
-    split.execfile(file);
+    //cout << "--- Split ---" << '\n'; 
+    //split.execfile(file);
 
     cout << "--- SimpleGreedy ---" << '\n';
     simpleg.execfile(file);
