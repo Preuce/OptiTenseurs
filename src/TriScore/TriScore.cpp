@@ -9,7 +9,7 @@ Cost TriScore::solve(){
     int cost = 0;
     //tant qu'il reste des arètes
     while(!R.empty()){
-        O.push_back(R.front().first);
+        bestOrder.push_back(R.front().first);
         int i = C(E[R.front().first].first);
         int k = C(E[R.front().first].second);
         if(i != k){
@@ -39,7 +39,7 @@ void TriScore::updateRatio(){
     sort(R.begin(), R.end(), [](pair<int, double> a, pair<int, double> b){return a.second > b.second;});
 }
 
-Cost TriScore::ext_cost(int i, int k){ //TODO: je pense que c'est cassé
+Cost TriScore::ext_cost(int i, int k){
     int res = 1;
     for(int j = 0; j < size; j++){
         if(k != j){
@@ -88,10 +88,10 @@ int TriScore::C(int i){
  * 
  */
 void TriScore::display_order(){
-    for(int i = 0; i < O.size()-1; i++){
-        cout << O[i] << " - ";
+    for(int i = 0; i < bestOrder.size()-1; i++){
+        cout << bestOrder[i] << " - ";
     }
-    cout << O.back() << '\n';
+    cout << bestOrder.back() << '\n';
 }
 
 void TriScore::init(const char* file){
@@ -99,7 +99,7 @@ void TriScore::init(const char* file){
     R.clear();
     V.clear();
     E.clear();
-    O.clear();
+    bestOrder.clear();
 
     ifstream ifile(file);
     string line;
@@ -146,13 +146,13 @@ void TriScore::execfile(const char* file){
     //cout << "End of initialisation" << endl;
     //cout << "Starting solving" << endl;
     auto start = std::chrono::high_resolution_clock::now();
-    int c = solve();
-    cout << "Best cost : " << c << '\n';
+    bestCost = solve();
     auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> tempsSeq = end-start;
+    time = end-start;
+    cout << "Best cost : " << bestCost << '\n';
     cout << "Best order : ";
     display_order();
-    std::cout << std::scientific << "Temps : " << tempsSeq.count()<< "s" << '\n';
+    std::cout << std::scientific << "Temps : " << time.count()<< "s" << '\n';
     cout << "--------------" << endl;
 }
 

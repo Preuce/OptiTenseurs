@@ -191,13 +191,12 @@ void MatrixSolver::execfile(const char* file){
     //cout << "End of initialisation" << endl;
     //cout << "Starting solving" << endl;
     auto start = std::chrono::high_resolution_clock::now();
-    solve(size, 0, {}, network); //TODO:
-
-    cout << "Best cost : " << bestCost << endl;
+    solve(size, 0, {}, network);
 
     auto end = chrono::high_resolution_clock::now();
-    chrono::duration<double> tempsSeq = end-start;
-    cout << std::scientific << "Temps : " << tempsSeq.count()<< "s" << std::endl;
+    time = end-start;
+    cout << "Best cost : " << bestCost << endl;
+    cout << std::scientific << "Temps : " << time.count()<< "s" << std::endl;
     cout << "-------------" << endl;
 }
 

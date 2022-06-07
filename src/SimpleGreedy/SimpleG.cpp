@@ -137,6 +137,26 @@ void SimpleG::display_order(int key){
     }
 }
 
+void SimpleG::display_order(){
+    for(int i = 0; i < bestOrder.size()-1; i++){
+        cout << bestOrder[i] << " - ";
+    }
+    cout << bestOrder.back() << '\n';
+
+}
+
+void SimpleG::get_order(int key){
+    bestOrder.clear();
+    int i = O[key];
+    int next = key-pow(2, i);
+    if(next >= 0){
+        get_order(next);
+        bestOrder.push_back(i);
+    }else{
+        bestOrder.push_back(i);
+    }
+}
+
 void SimpleG::init(const char* file){
     //hardcoder les poids voisinant les sommets dans un fichier texte
     G.clear();
@@ -144,6 +164,8 @@ void SimpleG::init(const char* file){
     O.clear();
     C.clear();
     S.clear();
+
+    bestOrder.clear();
 
     ifstream ifile(file);
     string line;
@@ -189,13 +211,14 @@ void SimpleG::execfile(const char* file){
     //cout << "End of initialisation" << endl;
     //cout << "Starting solving" << endl;
     auto start = std::chrono::high_resolution_clock::now();
-    int c = solve(sgref);
-    cout << "Best cost : " << c << endl;
+    bestCost = solve(sgref);
     auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> tempsSeq = end-start;
+    time = end-start;
+    cout << "Best cost : " << bestCost << endl;
     cout << "Best order : ";
-    display_order(get_key(S));
-    std::cout << std::scientific << "Temps : " << tempsSeq.count()<< "s" << std::endl;
+    get_order(get_key(S));
+    display_order();
+    std::cout << std::scientific << "Temps : " << time.count()<< "s" << std::endl;
     cout << "--------------" << endl;
 }
 

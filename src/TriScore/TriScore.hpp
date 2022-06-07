@@ -9,7 +9,10 @@ class TriScore{
     vector<pair<int, double>> R; //La liste des scores triés
     vector<pair<int, int>> E; //la liste des arètes
     Tab V; //la correspondance entre les sommets (tkt)
-    Tab O; //l'ordre
+
+    Tab bestOrder; //l'ordre
+    int bestCost;
+    std::chrono::duration<double> time;
 
     Cost solve();
     //met à jour la liste des score après suppression d'une arète

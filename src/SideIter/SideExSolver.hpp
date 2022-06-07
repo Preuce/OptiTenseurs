@@ -16,13 +16,19 @@ class SideIter{
     Tab Z; //size/2, donne la référence de R et S
     vector<pair<int, int>> O; //tableau stockant l'ensemble des pairs de contractions donnant des coûts minimum
 
+    Tab bestOrder;
+    int bestCost;
+    std::chrono::duration<double> time;
+
     Cost solve();
 
     Cost contract(int s, int i, int x, pair<int, int>& p);
-    void calcT();
+ 
     void computeA(int s, int k);
     void restoreA(int s);
     void display_order(int s, int k);
+    void display_order();
+    void get_order(int s, int k);
 
     void init(const char* file);
 

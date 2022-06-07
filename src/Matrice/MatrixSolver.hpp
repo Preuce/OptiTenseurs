@@ -15,6 +15,7 @@ class MatrixSolver{
 
         Cost bestCost;
         vector<pair<int, int>> bestOrder;
+        std::chrono::duration<double> time;
         void solve(int n, Cost cost, vector<pair<int, int>> v, Network N);
 
         void display();

@@ -4,39 +4,34 @@
 
 class SLim{
     public:
+    public:
     int size;
-    Tab A; //les poids sortants pour un état s donné
-    Tab G;
+    int delta;
+    //(on rappelle que D = size/2)
+    Tab A; //poids sortant (taille size);
+    Tab G; //matrice d'adjacence (taille size*(size+1))
+    Tab T; //tableau stockant les ti (taille 2(D-1))
 
-    Tab R; //Cs[k] + contract(0, s)
-    Tab Q; //Cs[k] + contract(1, s)
+    Tab P; //size
+    Tab C; //tableau stockant les coûts ci (taille 2(D-1)), C[i] = cout pour obtenir T[i]
+    
+    Tab Z; //size/2, donne la référence de R et S
+    vector<pair<int, int>> O; //tableau stockant l'ensemble des pairs de contractions donnant des coûts minimum
 
-    //les couts, de dimension (size*size)/4
-    vector<Cost> C;
-    //le poids de l'arète t de l'état s
-    vector<Cost> T;
+    Tab bestOrder;
+    int bestCost;
+    std::chrono::duration<double> time;
 
-    //taille 2D a priori, pour chaque état on va stocker "l'indice" de l'état précédent 
-    //(0 et 1 c'est les cas basiques, ce qui est embêtant c'est les 2 -> 2i - 1, où i est size - S.size()-1)
-    //Pour tout i correspondant à size-S.size()-1
-    //size * (2*size-1)/2
-    //(i+1) * (2i)/2
-    //dimension (2*size-1)*size
-    vector<int> P;
-    //on stock dans chaque P[size*s + i] l'indice p vers lequel on va
-    vector<pair<int, int>> Z; //paires de contraction temporaires (taille s)
-    vector<pair<int, int>> O; //ensemble des pairesde contractions (taille s*s/4)
+    Cost solve();
 
-    Cost solve(int s, int i);
-
-    //computer A en considérant que les 2 contract° ont été effectuée
-    void computeA(int s);
+    Cost contract(int s, int i, int x, pair<int, int>& p);
+ 
+    void computeA(int s, int k);
     void restoreA(int s);
-    Cost contract(int x, int s);
+    void display_order(int s, int k);
+    void display_order();
+    void get_order(int s, int k);
 
-    void display_order(int s, int i);
-
-    void get_size(char* preamble);
     void init(const char* file);
 
     void execfile(const char* file);

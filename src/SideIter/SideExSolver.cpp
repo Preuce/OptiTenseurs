@@ -154,8 +154,52 @@ void SideIter::display_order(int s, int k){
     }
 }
 
+void SideIter::display_order(){
+    for(int i = 0; i < bestOrder.size()-1; i++){
+        cout << bestOrder[i] << " - ";
+    }
+    cout << bestOrder.back() << '\n';
+}
+
+void SideIter::get_order(int s, int k){
+    int ofs = (s+1)*(s+1)-1;
+    if(s >= 0){
+        if(k > 1){
+            get_order(s-1, k-2);
+        }else{
+            get_order(s-1, Z[s]-2);
+        }
+        int e1 = O[ofs + k].first;
+        int e2 = O[ofs + k].second;
+
+        switch(e1){
+            case 0:
+                bestOrder.push_back(s);
+            break;
+            case 2:
+                bestOrder.push_back(size/2-1 + s);
+            break;
+            case 1:
+                bestOrder.push_back(size-1+s);
+            break;
+        }
+
+        switch(e2){
+            case 0:
+                bestOrder.push_back(s);
+            break;
+            case 2:
+                bestOrder.push_back(size/2-1 + s);
+            break;
+            case 1:
+                bestOrder.push_back(size-1 + s);
+            break;
+        }
+        //cout << "|" << O.at(ofs + k).first << " - " << O.at(ofs + k).second << "|";
+    }
+}
+
 void SideIter::init(const char* file){
-    //hardcoder les poids voisinant les sommets dans un fichier texte
     G.clear();
     A.clear();
     P.clear();
@@ -163,6 +207,7 @@ void SideIter::init(const char* file){
     T.clear();
     O.clear();
     Z.clear();
+    bestOrder.clear();
 
     ifstream ifile(file);
     string line;
@@ -203,12 +248,15 @@ void SideIter::execfile(const char* file){
     //cout << "End of initialisation" << endl;
     //cout << "Starting solving" << endl;
     auto start = std::chrono::high_resolution_clock::now();
-    cout << "Best cost : " << solve() << '\n';
+    bestCost = solve();
     auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> tempsSeq = end-start;
-    display_order(size/2-2, Z[size/2-1]);
-    cout << '\n';
-    std::cout << std::scientific << "Temps : " << tempsSeq.count()<< "s" << '\n';
+    time = end-start;
+    cout << "Best cost : " << bestCost << '\n';
+    get_order(size/2-2, Z[size/2-1]);    
+    bestOrder.push_back(size-2);
+    cout << "Best order : ";
+    display_order();
+    std::cout << std::scientific << "Temps : " << time.count()<< "s" << '\n';
     cout << "--------------" << endl;
 }
 

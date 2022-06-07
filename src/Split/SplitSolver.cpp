@@ -188,12 +188,12 @@ void Split::execfile(const char* file){
     //cout << "End of initialisation" << endl;
     //cout << "Starting solving" << endl;
     auto start = std::chrono::high_resolution_clock::now();
-    cout << "Best cost : " << solve(S) << endl;
-    display_order(S);
-
+    bestCost = solve(S);
     auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> tempsSeq = end-start;
-    std::cout << std::scientific << "Temps : " << tempsSeq.count()<< "s" << std::endl;
+    time = end-start;
+    cout << "Best cost : " << bestCost << endl;
+    display_order(S);
+    std::cout << std::scientific << "Temps : " << time.count()<< "s" << std::endl;
     cout << "--------------" << endl;
 }
 

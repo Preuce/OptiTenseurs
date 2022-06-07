@@ -12,6 +12,9 @@ vector<Cost> C; //la liste des coûts obtenus
 vector<long int> P1; //la liste des ordres S1
 vector<long int> P2; //la liste des ordres S2
 
+int bestCost;
+std::chrono::duration<double> time;
+
 //A : Un tableau de taille n*n, le poids des arrêtes sortantes de chaque sommet, pour les n états S d'un "plongeon"
 //G : un tableau de taille n+1*n, la matrice d'adjacence + la colonne A de départ. M[i][j] = G[i*size+j]
 //S : Une liste de sommet, les sommets sélectionné pour cet état

@@ -23,6 +23,10 @@ class SimpleG{
     Tab O;
     Tab C;
 
+    Cost bestCost;
+    Tab bestOrder;
+    std::chrono::duration<double> time;
+
     SouG getSG(){SouG sg; sg.set(S, G, vector<int> (size, -1)); return sg;}
     Cost contract(int i, SouG& sg);
     void cheap_contract(int i, SouG& sg);
@@ -33,6 +37,8 @@ class SimpleG{
     Tab get_Tab(int key);
 
     void display_order(int key);
+    void display_order();
+    void get_order(int key);
 
     void init(const char* file);
 

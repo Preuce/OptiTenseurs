@@ -243,13 +243,13 @@ void SplitRange::execfile(const char* file){
     //cout << "Starting solving" << endl;
     cout << "Range : " << delta << '\n';
     auto start = std::chrono::high_resolution_clock::now();
-    cout << "Best cost : ";
-    cout << solve(S) << '\n';
+    bestCost = solve(S);
+    cout << "Best cost : " << bestCost << '\n';
     auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> tempsSeq = end-start;
+    time = end-start;
     cout << "Best order : ";
     display_order(S);
-    std::cout << std::scientific << "Temps : " << tempsSeq.count()<< "s" << std::endl;
+    std::cout << std::scientific << "Temps : " << time.count()<< "s" << std::endl;
     cout << "--------------" << endl;
     delta = -1;
 }
