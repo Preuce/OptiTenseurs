@@ -1,0 +1,1 @@
+/usr/bin/c++     CMakeFiles/SolverSplit.dir/home/brice/Bureau/OptiTenseurs/src/Split/SplitSolver.cpp.o CMakeFiles/SolverSplit.dir/home/brice/Bureau/OptiTenseurs/src/Split/Main.cpp.o CMakeFiles/SolverSplit.dir/home/brice/Bureau/OptiTenseurs/tools/Display/Display.cpp.o CMakeFiles/SolverSplit.dir/home/brice/Bureau/OptiTenseurs/tools/Sort/Sort.cpp.o  -o SolverSplit 
