@@ -2,36 +2,45 @@
 
 Cost SideIter::solve(){
     pair<int, int> p;
-    //pour commencer, T est {R1, Q1, N1, 1, 1, ..., 1}, C est fill à 0
     //passage de l'état s, à s+1
     for(int s = 0; s < size/2-1; s++){
-        int N = G[size*s + s+size/2];
-        int ofs = 2*s;
-        int ofsc = (s+1)*(s+1)-1;
-        for(int k = 2*(s+1); k >= 2; k--){
-            //pour chaque produits de Nk, on calcule le coût de contracter vers l'arête centrale suivante
+        int N = G[size*s + s+size/2]; //arête centrale à multiplier
+        int ofs = 2*s; //offset dans le tableau T
+        int ofsc = (s+1)*(s+1)-1; //offset dans le tableau C
+        for(int k = 2*(s+1); k >= 2; k--){ //à chaque étape, on considère 2 possibilités
+            //pour chaque produits de Nk, on calcule le coût de garder l'arête
             T[k] = T[k-2]*N;
+
+            //coût de contracter les 2 autres arêtes (dans le meilleur ordre possible)
             C[k] = C[k-2] + contract(s, k, 2, p);
 
+            //stockage de l'ordre ayant donné le coût le plus faible
             O[ofsc + k] = p;
 
+            //coût de garder l'arête du haut, sachant que l'arête centrale est de poids T[k] et a coûté C[k-2]
             int Rs = C[k-2] + contract(s, k, 0, p);
 
-            //celui qui donne le meilleur coût pour R est aussi celui qui donne le meilleur coût pour Q
+            //si cette valeur d'arête centrale offre les meilleurs contractions pour les arêtes latérale, on le garde en mémoire
             if((Rs < P[ofs] || P[ofs] == -1) && Rs > 0){
-                P[ofs] = Rs; //minimum de (coût d'arrivée + coût de sortie) pour R à l'état s
-                Z[s] = k; //arête centrale donnant le meilleur coût R[s]
-                O[ofsc] = p; //meilleure ordre de contraction
+                //Rs = minimum de (coût d'arrivée + coût de sortie) pour R à l'état s
+                //P[ofs] stock le meilleur coût Rs obtenu pour l'instant
+                P[ofs] = Rs;
+                //on stock l'arête centrale donnant le meilleur coût pour R et Q à l'état s 
+                Z[s] = k; 
+                //on stock l'ordre (la paire d'arête) dans lequel on a contracté
+                O[ofsc] = p; 
 
+                //l'arête centrale donnant le meilleur coût pour R est aussi celle donnant le meilleur coût pour Q
                 int Qs = C[k-2] + contract(s, k, 1, p);
                 P[ofs+1] = Qs;
                 O[ofsc + 1] = p; 
             }
-            
-            //restoreA(s); //inutile ?
         }
+        //on ajoute les 2 nouvelles arêtes latérale
         T[0] = G[size*s + s+1];
         T[1] = G[size*(s+size/2) + s+1+size/2];
+
+        //on range le meilleur coût pour R et Q
         C[0] = P[ofs];
         C[1] = P[ofs+1];
     }
@@ -45,7 +54,8 @@ Cost SideIter::solve(){
         int ck = C[k] + T[k]*N;
         if(ck < cost && ck > 0){
             cost = ck;
-            Z[s] = k; //donne le k de l'avant-dernier état qui mène à l'optimum
+            //donne le k de l'avant-dernier état qui mène à l'optimum, afin de le récupérer facilement
+            Z[s] = k; 
         }
     }
     return cost; 
@@ -61,21 +71,25 @@ Cost SideIter::solve(){
  * @return Cost 
  */
 Cost SideIter::contract(int s, int k, int x, pair<int, int>& p){
+    //on calcule les poids sortants des sommets s et s+D
     computeA(s, k);
+    //on récupère les poids des arêtes latérales (pas nécessaire mais plus lisible)
     Cost G1 = G[size*(s+size/2) + s+1+size/2];
     Cost G0 = G[size*s + s+1];
 
+    //les coûts associés aux différents ordres de contraction
     Cost r12;
     Cost r21;
 
     Cost r02;
     Cost r20;
     Cost cost;
-    switch(x){ //c'est là qu'on return le min dans les 2 ordres possibles
-        //cas arête du dessus
+    switch(x){
         //o-R- (G0)
         //N
         //o-Q- (G1)
+        
+        //on garde l'arête du dessus (R)
         case 0:
             //Q puis N
             r12 = A[s+1+size/2]*T[k] + A[s]*A[s+1+size/2]/G1;
@@ -90,7 +104,7 @@ Cost SideIter::contract(int s, int k, int x, pair<int, int>& p){
                 p = make_pair(2, 1);
             }
             break;
-        //cas arête du dessous
+        //cas arête du dessous (Q)
         case 1:
             r02 = A[s+1]*T[k] + A[s+size/2]*A[s+1]/G0;
             r20 = G1*(G0*T[k] + A[s+1]);
@@ -102,7 +116,7 @@ Cost SideIter::contract(int s, int k, int x, pair<int, int>& p){
                 p = make_pair(2, 0);
             }
             break;
-        //cas arète centrale
+        //cas arête centrale
         case 2:
             cost = T[k]*(A[s+1] + A[s+1+size/2]);
             p = make_pair(0, 1);
@@ -111,6 +125,7 @@ Cost SideIter::contract(int s, int k, int x, pair<int, int>& p){
             cost = 0;
             break;
     }
+    //on remet le tableau des poids sortants à son état initial (au cas où)
     restoreA(s);
     return cost;
 }
@@ -122,6 +137,7 @@ Cost SideIter::contract(int s, int k, int x, pair<int, int>& p){
  * @param s the state we are currently at
  */
 void SideIter::computeA(int s, int k){
+    //pour s et s+D, on ignore l'arête "de derrière"
     A[s] = G[size*s + s+1]*T[k];
     A[s+size/2] = G[size*(s+size/2) + s+1+size/2]*T[k];
 }
@@ -132,7 +148,7 @@ void SideIter::computeA(int s, int k){
  * @param s the state
  */
 void SideIter::restoreA(int s){
-    A[s] = G[size*size + s]; //stock le poids sortant du sommet s
+    A[s] = G[size*size + s];
     A[s+size/2] = G[size*size + s+size/2];
 }
 
@@ -199,7 +215,7 @@ void SideIter::get_order(int s, int k){
     }
 }
 
-void SideIter::init(const char* file){
+void SideIter::init(string file){
     G.clear();
     A.clear();
     P.clear();
@@ -240,9 +256,8 @@ void SideIter::init(const char* file){
     }
 }
 
-void SideIter::execfile(const char* file){
-    char path[100] = "../instances/";
-    strcat(path, file);
+void SideIter::execfile(string file){
+    string path = "../instances/" + file;
     //cout << "Starting initialisation on : " << file << endl;
     init(path);
     //cout << "End of initialisation" << endl;
@@ -260,22 +275,21 @@ void SideIter::execfile(const char* file){
     cout << "--------------" << endl;
 }
 
-void SideIter::execdir(const char* dir){
-    char base[100] = "../instances/";
-    strcat(base, dir);
-    strcat(base, "/");
+void SideIter::execdir(string dir){
+    string base = "../instances/" + dir + "/";
     DIR* dp = NULL;
     struct dirent *file = NULL;
-    dp = opendir(base);
-    
+    dp = opendir(base.c_str());
+    if(dp == NULL){
+        cerr << "Could not open directory : " << base << '\n';
+        exit(-1);
+    }
     file = readdir(dp);
     
     while(file != NULL){
         if(file->d_name[0] != '.'){
-            char path[100];
-            strcpy(path, base);
-            strcat(path, file->d_name);
-            cout << "FILE : " << path << endl;
+            string path = base + file->d_name;
+            display(path);
             execfile(path);
         }
         file = readdir(dp);

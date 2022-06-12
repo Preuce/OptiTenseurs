@@ -3,10 +3,11 @@
 /**
  * @brief Solves a given state
  * 
- * @param S The tensors in this state
+ * @param S The dimensions in this state
  * @return int the best cost for S
  */
 Cost SplitRange::solve(Tab S){
+    //encodage de l'ensemble de sommets
     long int key = convert(S);
 
     if(C[key] == -1 && S.size() > 1){
@@ -16,32 +17,31 @@ Cost SplitRange::solve(Tab S){
         Tab S2;
 
         Cost cout_sortant = produit_sortant(S, computeA(S));
-        
-        //pour toutes les séparations de S
-        //do{
-            //on déplace la "barre" où on fait la coupure S1/S2 dans S
-            for(int i = 0; i < min(delta, (int) S.size()); i++){
-                S1.clear();
-                S2.clear();
-                //on attribue les sommets de S1
-                for(int k = 0; k <= i; k++){
-                    S1.push_back(S[k]);
-                    S1.push_back(S[k] + size/2);
-                }
-                //on attribue les sommets de S2
-                for(int k = i+1; k < S.size(); k++){
-                    S2.push_back(S[k]);
-                }
-                cost = solverGreedy.solve(S1) + solve(S2) + cout_sortant*cut(S1, S2);
-                if(cost < C[key] && cost > 0|| C[key] == -1){
-                    C[key] = cost;
-                    P1[key] = convert(S1); //TODO: pas bon
-                    P2[key] = convert(S2);
-                }
+    
+        //on parcours tous les découpages de dimension DELTA et moins
+        for(int i = 0; i < min(delta, (int) S.size()); i++){
+            S1.clear();
+            S2.clear();
+            //on attribue les sommets de S1
+            for(int k = 0; k <= i; k++){
+                S1.push_back(S[k]);
+                S1.push_back(S[k] + size/2);
             }
-        //}while(next_permutation(S.begin(), S.end()));
+            //on attribue les sommets de S2
+            for(int k = i+1; k < S.size(); k++){
+                S2.push_back(S[k]);
+            }
+            //on résoud S1 de manière exacte, on découpe S2 (le reste du TT)
+            cost = solverGreedy.solve(S1) + solve(S2) + cout_sortant*cut(S1, S2);
+            if(cost < C[key] && cost > 0|| C[key] == -1){
+                C[key] = cost;
+                P1[key] = convert(S1);
+                P2[key] = convert(S2);
+            }
+        }
     }else if(S.size() == 1){
         Tab p = {S[0], S[0] + size/2};
+        //overkill
         C[key] = solverGreedy.solve(p);
     }
     return C[key];
@@ -59,7 +59,7 @@ Tab SplitRange::computeA(Tab S){
         A[size*(S.size()-1) + i+size/2] = G[size*size + i+size/2];
         
         for(int k : S){
-            A[size*(S.size()-1) + i] /= G[size*i + k]; //TODO: KAKA
+            A[size*(S.size()-1) + i] /= G[size*i + k];
             A[size*(S.size()-1) + i] /= G[size*i + k+size/2];
             A[size*(S.size()-1) + i + size/2] /= G[size*(i+size/2) + k];
             A[size*(S.size()-1) + i + size/2] /= G[size*(i+size/2) + k + size/2];
@@ -165,7 +165,7 @@ void SplitRange::display_order(Tab S){
     }
 }
 
-void SplitRange::init(const char* file){
+void SplitRange::init(string file){
     //hardcoder les poids voisinant les sommets dans un fichier texte
     S.clear();
     G.clear();
@@ -182,6 +182,9 @@ void SplitRange::init(const char* file){
         switch(line[0]){
             case 'p':
                 size = atoi(&line[2]);
+                    if(delta <= 0){
+                    delta = min(3, size/2);
+                }
                 S.resize(size/2);
                 G.resize(size*(size+1), 1);
                 A.resize(size*size, 1);
@@ -208,40 +211,14 @@ void SplitRange::init(const char* file){
     solverGreedy.init(file);
 }
 
-void SplitRange::execfile(const char* file, int d){
-    char path[100] = "../instances/";
-    strcat(path, file);
-    cout << "Starting initialisation on : " << file << endl;
-    init(path);
-    //solverGreedy.init(path);
-    delta = d;
-    //cout << "End of initialisation" << endl;
-    //cout << "Starting solving" << endl;
-    auto start = std::chrono::high_resolution_clock::now();
-    cout << "Best cost : ";
-    cout << solve(S) << '\n';
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> tempsSeq = end-start;
-    cout << "Best order : ";
-    display_order(S);
-    std::cout << std::scientific << "Temps : " << tempsSeq.count()<< "s" << std::endl;
-    cout << "--------------" << endl;
-    delta = -1;
-}
-
-void SplitRange::execfile(const char* file){
-    char path[100] = "../instances/";
-    strcat(path, file);
+void SplitRange::execfile(string file){
+    string path = "../instances/" + file;
     //cout << "Starting initialisation on : " << file << endl;
     init(path);
     //solverGreedy.init(path);
-    if(delta <= 0){
-        delta = min(3, size/2);
-        //cout << delta << endl;
-    }
     //cout << "End of initialisation" << endl;
     //cout << "Starting solving" << endl;
-    cout << "Range : " << delta << '\n';
+    cout << "Delta : " << delta << '\n';
     auto start = std::chrono::high_resolution_clock::now();
     bestCost = solve(S);
     cout << "Best cost : " << bestCost << '\n';
@@ -254,21 +231,20 @@ void SplitRange::execfile(const char* file){
     delta = -1;
 }
 
-void SplitRange::execdir(const char* dir){
-    char base[100] = "../instances/";
-    strcat(base, dir);
-    strcat(base, "/");
+void SplitRange::execdir(string dir){
+    string base = "../instances/" + dir + "/";
     DIR* dp = NULL;
     struct dirent *file = NULL;
-    dp = opendir(base);
-    
+    dp = opendir(base.c_str());
+    if(dp == NULL){
+        cerr << "Could not open directory : " << base << '\n';
+        exit(-1);
+    }
     file = readdir(dp);
     
     while(file != NULL){
         if(file->d_name[0] != '.'){
-            char path[100];
-            strcpy(path, base);
-            strcat(path, file->d_name);
+            string path = base + file->d_name;
             display(path);
             execfile(path);
         }

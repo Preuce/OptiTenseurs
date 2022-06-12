@@ -7,28 +7,29 @@
  */
 Cost TriScore::solve(){
     int cost = 0;
-    //tant qu'il reste des arètes
+    //tant qu'il reste des arêtes
     while(!R.empty()){
         bestOrder.push_back(R.front().first);
+        //les vraies extrémités de l'arête
         int i = C(E[R.front().first].first);
         int k = C(E[R.front().first].second);
         if(i != k){
-            //ajoute le coût du retrait de R.front à cost
+            //ajoute le coût de contraction de R.front à cost
             cost += ext_cost(i, k)*G[size*i + k];
             contract(i, k);
         }
+        //suppression de l'arête
         R.erase(R.begin());
 
-        //update de R
+        //update du tableau des ratio
         updateRatio();
     }
     return cost;
 }
 
 /**
- * @brief mostly equivalent to sortRatio, updates the sorted list of scores R
- * It is sub-optimal to sort the entire list, especially considering that we have 3-4 edges to move at best
- * but at the same time, 95% of the list is already in order so its not that bad
+ * @brief updates the sorted list of scores R
+ * Sub-optimal, but time is not an issue here
  */
 void TriScore::updateRatio(){
     for(auto& p : R){
@@ -39,6 +40,13 @@ void TriScore::updateRatio(){
     sort(R.begin(), R.end(), [](pair<int, double> a, pair<int, double> b){return a.second > b.second;});
 }
 
+/**
+ * @brief Computes the external cost of 2 vertex
+ * 
+ * @param i 
+ * @param k 
+ * @return Cost 
+ */
 Cost TriScore::ext_cost(int i, int k){
     int res = 1;
     for(int j = 0; j < size; j++){
@@ -94,7 +102,7 @@ void TriScore::display_order(){
     cout << bestOrder.back() << '\n';
 }
 
-void TriScore::init(const char* file){
+void TriScore::init(string file){
     G.clear();
     R.clear();
     V.clear();
@@ -138,9 +146,8 @@ void TriScore::init(const char* file){
     sort(R.begin(), R.end(), [](pair<int, double> a, pair<int, double> b){return a.second > b.second;});
 }
 
-void TriScore::execfile(const char* file){
-    char path[100] = "../instances/";
-    strcat(path, file);
+void TriScore::execfile(string file){
+    string path = "../instances/" + file;
     //cout << "Starting initialisation on : " << file << endl;
     init(path);
     //cout << "End of initialisation" << endl;
@@ -156,26 +163,32 @@ void TriScore::execfile(const char* file){
     cout << "--------------" << endl;
 }
 
-void TriScore::execdir(const char* dir){
-    char base[100] = "../instances/";
-    strcat(base, dir);
-    strcat(base, "/");
+void TriScore::execdir(string dir){
+    string base = "../instances/" + dir + "/";
     DIR* dp = NULL;
     struct dirent *file = NULL;
-    dp = opendir(base);
-    
+    dp = opendir(base.c_str());
+    if(dp == NULL){
+        cerr << "Could not open directory : " << base << '\n';
+        exit(-1);
+    }
     file = readdir(dp);
     
     while(file != NULL){
         if(file->d_name[0] != '.'){
-            char path[100];
-            strcpy(path, base);
-            strcat(path, file->d_name);
-            //cout << "FILE : " << path << endl;
+            string path = base + file->d_name;
             display(path);
             execfile(path);
         }
         file = readdir(dp);
     }
     closedir(dp);
+}
+
+void get_approx_solution(int& cost, Tab& O, string file){
+    TriScore solver;
+    solver.init(file.c_str());
+    solver.solve();
+    cost = solver.bestCost;
+    O = solver.bestOrder;
 }

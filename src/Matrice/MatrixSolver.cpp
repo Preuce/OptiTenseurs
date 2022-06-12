@@ -19,11 +19,6 @@ void MatrixSolver::solve(int n, Cost cost, vector<pair<int, int>> v, Network N){
     if(n <= 1 && cost < bestCost){
         bestCost = cost;
         bestOrder = v;
-
-        /*cout << "New best cost : " << cost << endl;
-        display_best_order();
-        cout << endl;
-        cout << "--------------" << endl;*/
     }
 }
 
@@ -66,110 +61,41 @@ Cost contractionCost(int i, int j, Network N){
 }
 
 /**
- * @brief Displays a matrix
- * 
- * @param N 
- */
-void display(Network N){
-    for(unsigned int i = 0; i < N.size(); i++){
-        for(unsigned int j = 0; j < N.size(); j++){
-            cout << N[j][i] << " | ";
-        }
-        cout << endl;
-    }
-}
-
-
-void MatrixSolver::get_size(char* Preamble){
-
-	char c;
-	char * pp = Preamble;
-	int stop = 0;
-	//tmp = (char *)calloc(100, sizeof(char));
-	int nbT;
-	
-	while (!stop && (c = *pp++) != '\0'){
-		switch (c){
-            case 'c':
-                while ((c = *pp++) != '\n' && c != '\0');
-                break;
-                
-            case 'p':
-                sscanf(pp, "%d\n", &nbT);
-                stop = 1;
-                break;
-                
-            default:
-                break;
-        }
-	}
-	size = nbT;
-}
-
-/**
  * @brief initializes the network based on a textfile
  * 
  * @param path a path to a textfile
  */
-void MatrixSolver::init(const char* file){
+void MatrixSolver::init(string file){
     bestOrder.clear();
     bestCost = INT32_MAX;
     for(int i = 0; i < network.size(); i ++){
         network[i].clear();
     }
     network.clear();
-    //hardcoder les poids voisinant les sommets dans un fichier texte
-    int MAX_PREAMBLE = 4000;
-	char* Preamble = new char [MAX_PREAMBLE];
-
-    int c, oc;
-	char* pp = Preamble;
-
+    ifstream ifile(file);
+    string line;
     int i, j, w;
-	FILE* fp;
-
-    if((fp=fopen(file,"r"))==NULL ){ 
-        printf("ERROR: Cannot open infile\n"); 
-        exit(10); 
-    }
-
-    for(oc = '\0';(c = fgetc(fp)) != EOF && (oc != '\n' || c != 'e'); 
-    oc = *pp++ = c);
-
-    ungetc(c, fp); 
-	*pp = '\0';
-
-    get_size(Preamble);
-
-    network.resize(size);
-
-    for(int k = 0; k < size; k ++){
-        network[k].resize(size, 1);
-        network[k][k] = 0;
-    }
-	
-	while ((c = fgetc(fp)) != EOF){
-		switch (c){
-            case 'e':
-                if (!fscanf(fp, "%d %d %d", &i, &j, &w)){ 
-                    printf("ERROR: corrupted inputfile\n"); 
-                    exit(10);
+    while(getline(ifile, line)){
+        istringstream flux(&line[2]);
+        switch(line[0]){
+            case 'p':
+                size = atoi(&line[2]);
+                bestOrder.resize(size);
+                network.resize(size);
+                for(int k = 0; k < size; k ++){
+                    network[k].resize(size, 1);
+                    network[k][k] = 0;
                 }
+            break;
+            case 'e':
+                flux >> i >> j >> w;
                 network[i][j] = w;
                 network[j][i] = w;
-                break;
-                
-            case '\n':
-                
+            break;
             default:
-                break;
+            break;
         }
-	}
-
-    fclose(fp);
-	delete[] Preamble;
-
-    bestOrder.resize(size);
+    }
 }
 
 /**
@@ -182,12 +108,10 @@ void MatrixSolver::display_best_order(){
     }
 }
 
-void MatrixSolver::execfile(const char* file){
-    char path[100] = "../instances/";
-    strcat(path, file);
+void MatrixSolver::execfile(string file){
+    string path = "../instances/" + file;
     //cout << "Starting initialisation on : " << file << endl;
     init(path);
-    
     //cout << "End of initialisation" << endl;
     //cout << "Starting solving" << endl;
     auto start = std::chrono::high_resolution_clock::now();
@@ -195,27 +119,27 @@ void MatrixSolver::execfile(const char* file){
 
     auto end = chrono::high_resolution_clock::now();
     time = end-start;
-    cout << "Best cost : " << bestCost << endl;
+    cout << "Best cost* : " << bestCost << endl;
     cout << std::scientific << "Temps : " << time.count()<< "s" << std::endl;
     cout << "-------------" << endl;
 }
 
-void MatrixSolver::execdir(const char* dir){
-    char base[100] = "../instances/";
-    strcat(base, dir);
-    strcat(base, "/");
+void MatrixSolver::execdir(string dir){
+    string base = "../instances/" + dir + "/";
     DIR* dp = NULL;
     struct dirent *file = NULL;
-    dp = opendir(base);
+    dp = opendir(base.c_str());
     
+    if(dp == NULL){
+        cerr << "Could not open directory : " << base << '\n';
+        exit(-1);
+    }
     file = readdir(dp);
     
     while(file != NULL){
         if(file->d_name[0] != '.'){
-            char path[100];
-            strcpy(path, base);
-            strcat(path, file->d_name);
-            cout << "FILE : " << path << endl;
+            string path = base + file->d_name;
+            display(path);
             execfile(path);
         }
         file = readdir(dp);

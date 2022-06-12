@@ -1,6 +1,12 @@
 #ifndef TRISCOREMARGIN_HPP
 #define TRISCOREMARGIN_HPP
 #include "../Components.hpp"
+#include "../TriScore/TriScore.hpp"
+
+/**
+ * @brief Version alternative de TriScore, 
+ * modifie légèrement l'ordre déterminé par TriScore afin de trouver un meilleur résultat
+ */
 
 class SousG{
     public:
@@ -14,10 +20,10 @@ class SousG{
 
 class TriScoreM{
     public:
+    TriScore triscore;
     int size;
     int delta;
     vector<pair<int, int>> E;
-    vector<pair<int, double>> R;
     Tab G;
 
     Tab bestOrder;
@@ -28,12 +34,11 @@ class TriScoreM{
     Cost solve();
     Cost follow_order(Tab S);
     Cost contract(int i, SousG& sg);
+    void display_order();
 
-    double ratio(int i);
-
-    void init(const char* file);
-    void execfile(const char* file);
-    void execdir(const char* dir);
+    void init(string file);
+    void execfile(string file);
+    void execdir(string dir);
 };
 
 #endif

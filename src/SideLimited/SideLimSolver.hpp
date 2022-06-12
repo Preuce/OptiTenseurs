@@ -2,11 +2,15 @@
 #define SIDEEXSOLVER_HPP
 #include "../Components.hpp"
 
+/**
+ * @brief Version optimisée de SideIter, n'autorisant pas l'accumulation de plus de DELTA arêtes centrales
+ * Peu viable lorsque les arêtes centrales sont de faible dimension 
+ */
 class SLim{
     public:
     public:
     int size;
-    int delta;
+    int delta = -1;
     //(on rappelle que D = size/2)
     Tab A; //poids sortant (taille size);
     Tab G; //matrice d'adjacence (taille size*(size+1))
@@ -32,9 +36,9 @@ class SLim{
     void display_order();
     void get_order(int s, int k);
 
-    void init(const char* file);
+    void init(string file);
 
-    void execfile(const char* file);
-    void execdir(const char* dir);
+    void execfile(string file);
+    void execdir(string dir);
 };
 #endif

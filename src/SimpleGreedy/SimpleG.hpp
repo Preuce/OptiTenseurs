@@ -2,6 +2,13 @@
 #define SIMPLEG_HPP
 #include "../Components.hpp"
 
+/**
+ * @brief Algorithme glouton calculant le meilleurs coût en ne considérant que les liens effectifs entre les sommets
+ * Complexité : 2^3D
+ * 
+ * A priori pas de problème pour le faire en TOP -> DOWN
+ */
+
 class SouG{
     public:
     Tab S;
@@ -40,9 +47,9 @@ class SimpleG{
     void display_order();
     void get_order(int key);
 
-    void init(const char* file);
+    void init(string file);
 
-    void execfile(const char* file);
-    void execdir(const char* dir);
+    void execfile(string file);
+    void execdir(string dir);
 };
 #endif

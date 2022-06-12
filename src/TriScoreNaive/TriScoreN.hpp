@@ -2,6 +2,11 @@
 #define TRISCOREN_HPP
 #include "../Components.hpp"
 
+/**
+ * @brief Version alternative naïve de TriScore
+ * L'ordre de contraction est calculée au départ et n'est jamais mis à jour
+ */
+
 class NTS{
     public:
     int size;
@@ -21,8 +26,8 @@ class NTS{
 
     void display_order();
 
-    void init(const char* file);
-    void execfile(const char* file);
-    void execdir(const char* file);
+    void init(string file);
+    void execfile(string file);
+    void execdir(string file);
 };
 #endif

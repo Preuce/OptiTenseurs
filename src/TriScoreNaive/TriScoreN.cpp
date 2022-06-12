@@ -2,12 +2,19 @@
 
 Cost NTS::solve(){
     bestCost = 0;
+    //l'ordre R a été défini à l'initialisation
     for(auto& p : R){
         bestCost += contract(p.first);
     }
     return bestCost;
 }
 
+/**
+ * @brief Computes the cost of contracting an edge i in the graph G, and updates G and V
+ * 
+ * @param i 
+ * @return Cost 
+ */
 Cost NTS::contract(int i){
     int a = C(E[i].first);
     int b = C(E[i].second);
@@ -36,6 +43,12 @@ Cost NTS::contract(int i){
     }
 }
 
+/**
+ * @brief returns i's vertex of reference in the graph
+ * 
+ * @param i 
+ * @return int 
+ */
 int NTS::C(int i){
     if(V[i] == -1){
         return i;
@@ -44,6 +57,12 @@ int NTS::C(int i){
     }
 }
 
+/**
+ * @brief Computes the ratio (weight^2/contraction cost) of an edge
+ * 
+ * @param i 
+ * @return double 
+ */
 double NTS::ratio(int i){
     int a = E[i].first;
     int b = E[i].second;
@@ -67,7 +86,7 @@ void NTS::display_order(){
     cout << bestOrder.back() << '\n';
 }
 
-void NTS::init(const char* file){
+void NTS::init(string file){
     G.clear();
     E.clear();
     R.clear();
@@ -112,9 +131,8 @@ void NTS::init(const char* file){
     }
 }
 
-void NTS::execfile(const char* file){
-    char path[100] = "../instances/";
-    strcat(path, file);
+void NTS::execfile(string file){
+    string path = "../instances/" + file;
     //cout << "Starting initialisation on : " << file << endl;
     init(path);
     //cout << "End of initialisation" << endl;
@@ -130,22 +148,20 @@ void NTS::execfile(const char* file){
     cout << "--------------" << endl;
 }
 
-void NTS::execdir(const char* dir){
-        char base[100] = "../instances/";
-    strcat(base, dir);
-    strcat(base, "/");
+void NTS::execdir(string dir){
+    string base = "../instances/" + dir + "/";
     DIR* dp = NULL;
     struct dirent *file = NULL;
-    dp = opendir(base);
-    
+    dp = opendir(base.c_str());
+    if(dp == NULL){
+        cerr << "Could not open directory : " << base << '\n';
+        exit(-1);
+    }
     file = readdir(dp);
     
     while(file != NULL){
         if(file->d_name[0] != '.'){
-            char path[100];
-            strcpy(path, base);
-            strcat(path, file->d_name);
-            //cout << "FILE : " << path << endl;
+            string path = base + file->d_name;
             display(path);
             execfile(path);
         }

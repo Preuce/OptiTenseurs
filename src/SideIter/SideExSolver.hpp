@@ -2,10 +2,18 @@
 #define SIDEEXSOLVERITER_HPP
 #include "../Components.hpp"
 
+/**
+ * @brief Heuristique parcourant le TT par un côté 
+ * A chaque étape s, on considère 3 choix : 
+ * -garder l'arête du haut
+ * -garder l'arête centrale
+ * -garder l'arête du bas
+ * l'arête gardée voit son poids multiplié à celui de l'arête centrale suivante
+ */
 class SideIter{
     public:
-    int size;
-    //(on rappelle que D = size/2)
+    int size; //nombre de sommet
+    //(on rappelle que D = size/2, )
     Tab A; //poids sortant (taille size);
     Tab G; //matrice d'adjacence (taille size*(size+1))
     Tab T; //tableau stockant les ti (taille 2(D-1))
@@ -30,9 +38,9 @@ class SideIter{
     void display_order();
     void get_order(int s, int k);
 
-    void init(const char* file);
+    void init(string file);
 
-    void execfile(const char* file);
-    void execdir(const char* dir);
+    void execfile(string file);
+    void execdir(string dir);
 };
 #endif

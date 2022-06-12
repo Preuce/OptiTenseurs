@@ -1,25 +1,36 @@
 #include "TriScoreM.hpp"
 
 Cost TriScoreM::solve(){
-    //bestCost = TriScore.solve();
+    //TriScore a été exécuté à l'initialisation de l'instance
     //on obtient une borne supérieure au meilleur coût, et un ordre de référence
-    //on forme R sur cet ordre wj/ext_cost(j)
-    Tab O;
-    for(auto& p : R){
-        //cout << p .first << '\n';
-        O.push_back(p.first);
-    }
-    //on récupère uniquement les indices par simplicité
-    do{
-        Cost cost = follow_order(O);
-        if(cost > 0 && (cost < bestCost || bestCost == -1)){
-            bestCost = cost;
-            bestOrder = O; //je pense pas que ça marche comme ça malheureusement
+    Tab refOrder = bestOrder;
+
+    for(int d = 1; d <= delta; d++){
+        for(int i = 0; i < E.size()-d; i++){
+            //copie de l'ordre de référence
+            Tab S (refOrder);
+            int n = S[i];
+            //modification de l'ordre
+            for(int k = i; k < i+d; k++){
+                S[k] = S[k+1];
+            }
+            S[i+d] = n;
+            Cost cost = follow_order(S);
+            if(cost > 0 && (cost < bestCost || bestCost == -1)){
+                bestCost = cost;
+                bestOrder = S;
+            }
         }
-    }while(next_permutation(O.begin(), O.end()));
+    }
     return bestCost;
 }
 
+/**
+ * @brief Computes a cost given an order of contraction to follow
+ * 
+ * @param S the list of edges to contract
+ * @return Cost 
+ */
 Cost TriScoreM::follow_order(Tab S){
     SousG sg = getSG();
     Cost cost = 0;
@@ -30,6 +41,13 @@ Cost TriScoreM::follow_order(Tab S){
     return cost;
 }
 
+/**
+ * @brief Computes the cost of contracting an edge i in the graph G, and updates G and V
+ * 
+ * @param i 
+ * @param sg a sub-graph
+ * @return Cost 
+ */
 Cost TriScoreM::contract(int i, SousG &sg){
     int a = sg.C(E[i].first);
     int b = sg.C(E[i].second);
@@ -58,6 +76,12 @@ Cost TriScoreM::contract(int i, SousG &sg){
     }
 }
 
+/**
+ * @brief returns i's vertex of reference in the graph
+ * 
+ * @param i 
+ * @return int 
+ */
 int SousG::C(int i){
     while(V[i] != -1){
         i = V[i];
@@ -65,26 +89,18 @@ int SousG::C(int i){
     return i;
 }
 
-double TriScoreM::ratio(int i){
-    int a = E[i].first;
-    int b = E[i].second;
-    int res = 1;
-    for(int j = 0; j < size; j++){
-        if(a != j){
-            res *= max(1, G[size*b + j]);
-        }
-        if(b != j){ 
-            res *= max(1, G[size*a + j]);
-        }
+void TriScoreM::display_order(){
+    for(int i = 0; i < bestOrder.size()-1; i++){
+        cout << bestOrder[i] << " - ";
     }
-
-    return G[size*a + b]/(double) res;
+    cout << bestOrder.back() << '\n';
 }
 
-void TriScoreM::init(const char* file){
+void TriScoreM::init(string file){
+    triscore.init(file);
+
     G.clear();
     E.clear();
-    R.clear();
     bestCost = -1;
     bestOrder.clear();
 
@@ -97,7 +113,7 @@ void TriScoreM::init(const char* file){
             case 'p':
                 size = atoi(&line[2]);
                 G.resize(size*size, 1);
-                delta = min(max(delta, 0), 3*size/2 - 2);
+                delta = min(max(delta, 1), 3*size/2 - 2);
             break;
             case 'e':
                 flux >> i >> j >> w;
@@ -109,54 +125,50 @@ void TriScoreM::init(const char* file){
             break;
         }
     }
+
+    bestCost = triscore.solve();
+    bestOrder = triscore.bestOrder;
+
     for(int i = 0; i < size; i ++){
         G[size*i + i] = 0;
     }
 
     sort_edges(E);
-    for(int i = 0; i < E.size(); i++){
-        R.push_back(make_pair(i, ratio(i)));
-    }
-
-    sort(R.begin(), R.end(), [](pair<int, double> a, pair<int, double> b){return a.second > b.second;});
-
 }
 
-void TriScoreM::execfile(const char* file){
-    char path[100] = "../instances/";
-    strcat(path, file);
+void TriScoreM::execfile(string file){
+    string path = "../instances/" + file;
     //cout << "Starting initialisation on : " << file << endl;
     init(path);
     //cout << "End of initialisation" << endl;
     //cout << "Starting solving" << endl;
-    cout << "Range : " << delta << '\n';
+    cout << "Delta : " << delta << '\n';
     auto start = std::chrono::high_resolution_clock::now();
     bestCost = solve();
     cout << "Best cost : " << bestCost << '\n';
     auto end = std::chrono::high_resolution_clock::now();
     time = end-start;
-    //cout << "Best order : ";
-    //display_order(S);
+    cout << "Best order : ";
+    display_order();
     std::cout << std::scientific << "Temps : " << time.count()<< "s" << std::endl;
     cout << "--------------" << endl;
-    //delta = -1;
+    delta = -1;
 }
 
-void TriScoreM::execdir(const char* dir){
-    char base[100] = "../instances/";
-    strcat(base, dir);
-    strcat(base, "/");
+void TriScoreM::execdir(string dir){
+    string base = "../instances/" + dir + "/";
     DIR* dp = NULL;
     struct dirent *file = NULL;
-    dp = opendir(base);
-    
+    dp = opendir(base.c_str());
+    if(dp == NULL){
+        cerr << "Could not open directory : " << base << '\n';
+        exit(-1);
+    }
     file = readdir(dp);
     
     while(file != NULL){
         if(file->d_name[0] != '.'){
-            char path[100];
-            strcpy(path, base);
-            strcat(path, file->d_name);
+            string path = base + file->d_name;
             display(path);
             execfile(path);
         }

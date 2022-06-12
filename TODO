@@ -1,6 +1,0 @@
--mettre à jour le générateur d'instance pour être plus flexible
--regrouper les différents solver dans une classe principale
--générer TOUTES les permutations dans SplitRange
--corriger les soucis de fusions d'arètes dans TriScore
--comparer et exporter les résultats
--trouver une librairie permettant d'interrompre l'exécution d'une fonction si elle prend trop de temps

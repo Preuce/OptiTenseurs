@@ -7,8 +7,10 @@
  * @return int the best cost for S
  */
 Cost Split::solve(Tab S){
+    //encodage de l'ensemble de sommets
     long int key = convert(S);
 
+    //si il reste plus d'1 sommet et que le coût n'a pas encore été calculé
     if(C[key] == -1 && S.size() > 1){
         int cost;
         
@@ -34,7 +36,6 @@ Cost Split::solve(Tab S){
                 cost = solve(S1) + solve(S2) + cout_sortant*cut(S1, S2);
                 if(cost < C[key] && cost > 0|| C[key] == -1){
                     C[key] = cost;
-                    //cout << cost << endl;
                     P1[key] = convert(S1);
                     P2[key] = convert(S2);
                 }
@@ -56,7 +57,7 @@ Tab Split::computeA(Tab S){
     for(int i : S){
         A[size*(S.size()-1)+i] = G[size*size + i];
         for(int k : S){
-            A[size*(S.size()-1)+i] /= G[size*i + k]; //TODO: KAKA
+            A[size*(S.size()-1)+i] /= G[size*i + k];
         }   
     }
     return A;
@@ -83,7 +84,7 @@ Cost Split::cut(Tab S1, Tab S2){
  * @brief computes the product of all the edges leaving a state
  * 
  * @param S The tensors in this state
- * @param A The external-weight of all tensors for each states
+ * @param A The external-weights of all tensors for each states
  * @return int 
  */
 Cost Split::produit_sortant(Tab S, Tab A){
@@ -139,7 +140,7 @@ void Split::display_order(Tab S){//dégueulasse
     }
 }
 
-void Split::init(const char* file){
+void Split::init(string file){
     S.clear();
     G.clear();
     A.clear();
@@ -180,9 +181,8 @@ void Split::init(const char* file){
     }
 }
 
-void Split::execfile(const char* file){
-    char path[100] = "../instances/";
-    strcat(path, file);
+void Split::execfile(string file){
+    string path = "../instances/" + file;
     //cout << "Starting initialisation on : " << file << endl;
     init(path);
     //cout << "End of initialisation" << endl;
@@ -191,27 +191,27 @@ void Split::execfile(const char* file){
     bestCost = solve(S);
     auto end = std::chrono::high_resolution_clock::now();
     time = end-start;
-    cout << "Best cost : " << bestCost << endl;
+    cout << "Best cost* : " << bestCost << '\n';
+    cout << "Best order : " << '\n';
     display_order(S);
-    std::cout << std::scientific << "Temps : " << time.count()<< "s" << std::endl;
+    std::cout << std::scientific << "Temps : " << time.count()<< "s" << '\n';
     cout << "--------------" << endl;
 }
 
-void Split::execdir(const char* dir){
-    char base[100] = "../instances/";
-    strcat(base, dir);
-    strcat(base, "/");
+void Split::execdir(string dir){
+    string base = "../instances/" + dir + "/";
     DIR* dp = NULL;
     struct dirent *file = NULL;
-    dp = opendir(base);
-    
+    dp = opendir(base.c_str());
+    if(dp == NULL){
+        cerr << "Could not open directory : " << base << '\n';
+        exit(-1);
+    }
     file = readdir(dp);
     
     while(file != NULL){
         if(file->d_name[0] != '.'){
-            char path[100];
-            strcpy(path, base);
-            strcat(path, file->d_name);
+            string path = base + file->d_name;
             display(path);
             execfile(path);
         }

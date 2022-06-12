@@ -1,5 +1,7 @@
 #include "Sort.hpp"
 
+//Fonction pour trier une liste d'arête selon l'ordre gauche -> droite et haut -> bas
+
 void sort_edges(std::vector<std::pair<int, int>>& E){
     int size = (2*E.size() + 4)/3;
     
