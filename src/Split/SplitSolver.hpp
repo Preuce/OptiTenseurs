@@ -2,6 +2,11 @@
 #define SPLITSOLVER_HPP
 #include "../Components.hpp"
 
+/**
+ * @brief Algorithme glouton calculant le meilleur coût en considérant toutes les séparations possible du TT
+ * Complexité : 2^4D
+ */
+
 class Split{
     public:
 int size; //le nombre de sommet du réseau
@@ -12,6 +17,9 @@ vector<Cost> C; //la liste des coûts obtenus
 vector<long int> P1; //la liste des ordres S1
 vector<long int> P2; //la liste des ordres S2
 
+int bestCost;
+std::chrono::duration<double> time;
+
 //A : Un tableau de taille n*n, le poids des arrêtes sortantes de chaque sommet, pour les n états S d'un "plongeon"
 //G : un tableau de taille n+1*n, la matrice d'adjacence + la colonne A de départ. M[i][j] = G[i*size+j]
 //S : Une liste de sommet, les sommets sélectionné pour cet état
@@ -19,8 +27,7 @@ vector<long int> P2; //la liste des ordres S2
 //P : une map associant au code binaire de chaque état un ordre
 
 //initialiseurs
-void get_size(char* Preamble);
-void init(const char* file); //initialise G, A, et S (S est simplement la liste des sommets au départ)
+void init(string file); //initialise G, A, et S (S est simplement la liste des sommets au départ)
 Cost solve(Tab S); //calcule le coût
 
 //Renvoie A mis à jour pour le S actuel
@@ -38,8 +45,8 @@ Tab recover(long int key);
 
 void display_order(Tab S);
 
-void execfile(const char* file);
-void execdir(const char* dir);
+void execfile(string file);
+void execdir(string dir);
 };
 
 #endif

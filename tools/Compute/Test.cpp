@@ -1,10 +1,9 @@
 #include "Test.hpp"
 
-void import_test(const char* test_file){
+//Code de contraction d'un ordre sur une instance
 
-    strcat(path_test, "../calc/");
-    strcat(path_test, test_file);
-    //cout << path_test << '\n';
+void import_test(string test_file){
+    path_test = "../calc/" + test_file;
     ifstream ifile(path_test);
     if(ifile.fail()){
         cout << "Could not open test file : " << test_file << '\n';
@@ -15,9 +14,8 @@ void import_test(const char* test_file){
     while(getline(ifile, line)){
         switch(line[0]){
             case 'f':
-                strcpy(path_instance, "");
-                strcat(path_instance, "../instances/");
-                strcat(path_instance, &line[2]); //dir/instance
+                path_instance = "../instances/";
+                path_instance.append(&line[2]);
                 import_instance(path_instance);
                 break;
             case 'o':
@@ -33,11 +31,7 @@ void import_test(const char* test_file){
     }
 }
 
-void display(char* test_file){
-
-}
-
-void import_instance(const char* file){
+void import_instance(string file){
     G.clear();
     E.clear();
 

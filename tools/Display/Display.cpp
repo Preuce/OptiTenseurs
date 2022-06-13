@@ -1,61 +1,13 @@
 #include "Display.hpp"
 using namespace std;
 
-void display2(const char* file){
+//Code d'affichage des instances
+
+void display(string file){
     cout << "---------------" << '\n';
-    char path[100] = "../instances/";
-    strcat(path, file);
+    string path = "../instances/" + file;
+
     string filename(path);
-    //cout << file << '\n';
-    string line;
-
-    string red("\033[0;31m");
-    string reset("\033[0m");
-    
-    ifstream input_file(filename);
-    if (!input_file.is_open()) {
-        cerr << "Could not open the file - '"
-             << filename << "'" << endl;
-        exit(-1);
-    }else{
-        int n = 0;
-        while (getline(input_file, line) && line[0] != 'e'){
-            for(auto& c : line){
-                switch(c){
-                    case '*':
-                        cout << red;
-                        break;
-                    case ' ':
-                        cout << reset << c;
-                        break;
-                    case '\n':
-                        cout << reset << c;
-                        break;
-                    case '\0':
-                        cout << reset << c;
-                        break;
-                    case 'v':
-                        cout << reset;
-                        break;
-                    default:
-                        cout << c;
-                        break;
-                }
-            }
-            cout << endl;
-        }
-    }
-
-    input_file.close();
-    cout << "---------------" << endl;
-}
-
-void display(const char* file){
-    cout << "---------------" << '\n';
-    char path[100] = "../instances/";
-    strcat(path, file);
-    string filename(path);
-    //cout << file << '\n';
     string line;
 
     string red("\033[0;31m");
@@ -105,22 +57,22 @@ void display(const char* file){
     }
 }
 
-void display_dir(const char* dir){
-    char base[100] = "../instances/";
-    strcat(base, dir);
-    strcat(base, "/");
+void display_dir(string dir){
+    string base = "../instances/" + dir + "/";
     DIR* dp = NULL;
     struct dirent *file = NULL;
-    dp = opendir(base);
+    dp = opendir(base.c_str());
+
+    if(dp == NULL){
+        cerr << "Could not open the directory : " << base << '\n';
+        exit(-1);
+    }
     
     file = readdir(dp);
 
     while(file != NULL){
         if(file->d_name[0] != '.'){
-            char path[100];
-            strcpy(path, base);
-            strcat(path, file->d_name);
-
+            string path = base + file->d_name;
             display(path);
         }
         file = readdir(dp);

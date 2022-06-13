@@ -2,6 +2,11 @@
 #define RANGESPLITSOLVER_HPP
 #include "../Split/SplitSolver.hpp"
 
+/**
+ * @brief Heuristique découpant le TT verticalement en tranche de taille max DELTA, et résolvant chaque sous-TT de manière exacte
+ * 
+ */
+
 class SplitRange{
     public:
 int size; //le nombre de sommet du réseau
@@ -14,6 +19,8 @@ vector<long int> P2; //la liste des ordres S2
 
 Split solverGreedy;
 int delta = -1;
+int bestCost;
+std::chrono::duration<double> time;
 
 //A : Un tableau de taille n*n, le poids des arrêtes sortantes de chaque sommet, pour les n états S d'un "plongeon"
 //G : un tableau de taille n+1*n, la matrice d'adjacence + la colonne A de départ. M[i][j] = G[i*size+j]
@@ -22,8 +29,7 @@ int delta = -1;
 //P : une map associant au code binaire de chaque état un ordre
 
 //initialiseurs
-void get_size(char* Preamble);
-void init(const char* file); //initialise G, A, et S (S est simplement la liste des sommets au départ)
+void init(string file); //initialise G, A, et S (S est simplement la liste des sommets au départ)
 Cost solve(Tab S); //calcule le coût
 
 //Renvoie A mis à jour pour le S actuel
@@ -44,9 +50,9 @@ void display_order(Tab S);
 
 SplitRange rearrange(vector<Tab> v);
 
-void execfile(const char* file, int delta);
-void execfile(const char* file);
-void execdir(const char* dir);
+void execfile(string file, int delta);
+void execfile(string file);
+void execdir(string dir);
 };
 
 #endif

@@ -3,14 +3,14 @@
 #include "../../src/Components.hpp"
 #include <fstream>
 #include <sstream>
-//prend un fichier texte en entrée
-//la première ligne indique un fichier instance
-//les lignes suivantes sont des suites de nombres correspondant à des arêtes
-//pour chaque ligne, on effectue les contractions dans l'ordre, on affiche le résultat, et on l'ajoute à la fin de la ligne
-//on arrête de lire une ligne si on atteint fin de ligne ou ":"
+//prend un fichier texte situé dans le répertoire 'calc' en entrée
+//le fichier de test par défaut lorsqu'aucun paramètre n'est passé est 'calc/test.txt'
+//une ligne commençant par un 'f' permet de charger un fichier d'instance
+//une ligne commençant par un 'o' décrit un ordre à calculer
+//les ordres sont représentés par des suites de nombre séparés par des espaces, les nombres correspondent aux arêtes du TT
 
-char path_test[100];
-char path_instance[100];
+string path_test;
+string path_instance;
 
 int size;
 vector<pair<int, int>> E;
@@ -18,7 +18,7 @@ vector<pair<int, int>> E;
 Tab G;
 Tab O;
 
-void import_instance(const char* file);
+void import_instance(string file);
 Cost follow_order(Tab O);
 
 class Graph{

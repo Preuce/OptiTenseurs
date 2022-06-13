@@ -1,325 +1,303 @@
 #include "SideLimSolver.hpp"
 
-Cost SLim::solve(int s, int i){
-    int ofs = s*s + i;
-    
-    if(s < size/2 - 1 && C[ofs] == -1){
-        //cout << ofs << endl;
-        computeA(s);
-        for(int x = 2; x >= 0; x--){
-            int p;
-            switch(x){
-                case 2:
-                    p = i+2;
-                    break;
-                default:
-                    p = x;
-                    break;
-            }
-            int cost = contract(x, s) + solve(s+1, p);
-            //cout << solve(s+1, p) << endl;
-            
-            if(cost < C[ofs] && cost > 0 || C[ofs] == -1){
-                C[ofs] = cost;
-                //lier la solution actuelle à la précédente/la suivante
-                P[ofs] = p;
-                //pour chaque truc dans P tu dis qui est son prédécesseur
-                //chaque truc dans C dit quel est le coût min à partir de lui-même
-                O[ofs] = Z[s];
+Cost SLim::solve(){
+    pair<int, int> p;
+    //nombre max d'arêtes centrales accumulées
+    int kmax = 2*delta + 1;
+    //passage de l'état s, à s+1
+    for(int s = 0; s < size/2-1; s++){
+        int N = G[size*s + s+size/2]; //arête centrale à multiplier
+        int ofs = 2*s; //offset dans le tableau T
+        int ofsc = (s+1)*(s+1)-1; //offset dans le tableau C
+        for(int k = min(2*(s+1), kmax); k >= 2; k--){
+            //pour chaque produits de Nk, on calcule le coût de garder l'arête
+            T[k] = T[k-2]*N;
+
+            //coût de contracter les 2 autres arêtes (dans le meilleur ordre possible)
+            C[k] = C[k-2] + contract(s, k, 2, p);
+
+            //stockage de l'ordre ayant donné le coût le plus faible
+            O[ofsc + k] = p;
+
+            //coût de garder l'arête du haut, sachant que l'arête centrale est de poids T[k] et a coûté C[k-2]
+            int Rs = C[k-2] + contract(s, k, 0, p);
+
+            //si cette valeur d'arête centrale offre les meilleurs contractions pour les arêtes latérale, on le garde en mémoire
+            if((Rs < P[ofs] || P[ofs] == -1) && Rs > 0){
+                //Rs = minimum de (coût d'arrivée + coût de sortie) pour R à l'état s
+                //P[ofs] stock le meilleur coût Rs obtenu pour l'instant
+                P[ofs] = Rs;
+                //on stock l'arête centrale donnant le meilleur coût pour R et Q à l'état s 
+                Z[s] = k;
+                //on stock l'ordre (la paire d'arête) dans lequel on a contracté
+                O[ofsc] = p;
+
+                //l'arête centrale donnant le meilleur coût pour R est aussi celle donnant le meilleur coût pour Q
+                int Qs = C[k-2] + contract(s, k, 1, p);
+                P[ofs+1] = Qs;
+                O[ofsc + 1] = p; 
             }
         }
-        restoreA(s);
-    }else if(T[s] < C[ofs] && T[s] > 0 || C[ofs] == -1){
-        //cout << ofs << endl;
-        //contracter les 2 sommets
-        C[ofs] = T[s]; //a priori, les positions 2 et 3 seront inoccuppées mais osef
-        //lier la solution actuelle à la précédente/la suivante
-        //P[ofs] = p;
+        //on ajoute les 2 nouvelles arêtes latérale
+        T[0] = G[size*s + s+1];
+        T[1] = G[size*(s+size/2) + s+1+size/2];
+
+        //on range le meilleur coût pour R et Q
+        C[0] = P[ofs];
+        C[1] = P[ofs+1];
     }
 
-    //rendre valeur stockée pour cet état
-    return C[ofs];
+    //gestion de la dernière étape, on récupère directement le résultat
+    int s = size/2-1;
+    int N = G[size*s + s+size/2];
+    int cost = INT32_MAX;
+
+    for(int k = 0; k <= min(2*s, kmax); k++){
+        int ck = C[k] + T[k]*N;
+        if(ck < cost && ck > 0){
+            cost = ck;
+            //donne le k de l'avant-dernier état qui mène à l'optimum, afin de le récupérer facilement
+            Z[s] = k;
+        }
+    }
+    return cost; 
 }
 
 /**
- * @brief 
+ * @brief computes the contraction cost
  * 
- * @param s 
- */
-void SLim::computeA(int s){
-    int i = s;
-    int ofs = size*s;
-    
-    A[ofs + i] = T[i]*G[size*i + i+1];
-    A[ofs + i+size/2] = T[i]*G[size*(i+size/2) + i+1+size/2];
-}
-
-/**
- * @brief 
- * 
- * @param s 
- */
-void SLim::restoreA(int s){
-    int ofs = size*s;
-
-    A[ofs + s] = G[size*size + s];
-    A[ofs + s+size/2] = G[size*size +s+size/2];
-}
-
-//TODO: might be errors
-/**
- * @brief 
- * 
- * @param x 
- * @param s 
+ * @param s the state we are currently at
+ * @param k the index in T of the tensor t we consider as the central edge
+ * @param x the contraction
+ * @param p a buffer that stores the exact order of contraction
  * @return Cost 
  */
-Cost SLim::contract(int x, int s){
-    computeA(s);
-    int i = s;
-    int ofs = size*s;
-    Cost G1 = G[size*(i+size/2) + i+1+size/2];
-    Cost G0 = G[size*i + i+1];
+Cost SLim::contract(int s, int k, int x, pair<int, int>& p){
+    //on calcule les poids sortants des sommets s et s+D
+    computeA(s, k);
+    //on récupère les poids des arêtes latérales (pas nécessaire mais plus lisible)
+    Cost G1 = G[size*(s+size/2) + s+1+size/2];
+    Cost G0 = G[size*s + s+1];
 
+    //les coûts associés aux différents ordres de contraction
     Cost r12;
     Cost r21;
 
     Cost r02;
     Cost r20;
-    int cost;
-    switch(x){ //c'est là qu'on return le min dans les 2 ordres possibles
-        //cas arète du dessus
+    Cost cost;
+    switch(x){
+        //o-R- (G0)
+        //N
+        //o-Q- (G1)
+        
+        //on garde l'arête du dessus (R)
         case 0:
-            T[i+1] = G0*G[size*(i+1) + i+1+size/2];
-            //1 - 2
-            r12 = T[i]*A[ofs + i+1+size/2] + A[ofs + i]*A[ofs + i+1+size/2]/G1; //TODO: virer les division
-            //2 - 1
-            r21 = A[ofs + i]*G1 + A[ofs + i+1+size/2]*G0;
+            //Q puis N
+            r12 = A[s+1+size/2]*T[k] + A[s]*A[s+1+size/2]/G1;
+
+            //N puis Q
+            r21 = G0*G1*T[k] + G0*A[s+1+size/2];
             if(r12 < r21){
                 cost = r12;
-                Z[i] = make_pair(1, 2);
+                p = make_pair(1, 2);
             }else{
                 cost = r21;
-                Z[i] = make_pair(2, 1);
+                p = make_pair(2, 1);
             }
             break;
-        //cas arète du dessous
+        //cas arête du dessous (Q)
         case 1:
-            T[i+1] = G1*G[size*(i+1) + i+1+size/2];
-            //0 - 2
-            r02 = T[i]*A[ofs + i+1] + A[ofs + i+size/2]*A[ofs + i+1]/G0; //TODO: virer les divisions
-            //2 - 0
-            r20 = A[ofs + i+size/2]*G0 + A[ofs + i+1]*G1;
+            r02 = A[s+1]*T[k] + A[s+size/2]*A[s+1]/G0;
+            r20 = G1*(G0*T[k] + A[s+1]);
             if(r02 < r20){
                 cost = r02;
-                Z[i] = make_pair(0, 2);
+                p = make_pair(0, 2);
             }else{
                 cost = r20;
-                Z[i] = make_pair(2, 0);
+                p = make_pair(2, 0);
             }
             break;
-        //cas arète centrale
+        //cas arête centrale
         case 2:
-            T[i+1] = T[i]*G[size*(i+1) + i+1+size/2];
-            cost = T[i]*(A[ofs + i+1] + A[ofs + i+1+size/2]);
-            Z[i] = make_pair(0, 1);
+            cost = T[k]*(A[s+1] + A[s+1+size/2]);
+            p = make_pair(0, 1);
             break;
         default:
             cost = 0;
             break;
     }
-    if(s == -1){
-    cout << T[i+1] << '\n';
-    cout << cost << '\n';
-    cout << "G1 : " << G1 << '\n';
-    cout << "G0 : " << G0 << '\n';
-    cout << "2 - 1 : " << r21 << '\n';
-    cout << "1 - 2 : " << r12 << '\n';
-    cout << "A : " << '\n';
-    for(int i = ofs; i < ofs + size; i++){
-        cout << i - ofs << " " << A[i] << '\n';
-    }
-    }
-
-    //cout << T[i+1] << '\n';
-    //cout << cost << '\n';
+    //on remet le tableau des poids sortants à son état initial (au cas où)
     restoreA(s);
-    //cout << cost << endl;
     return cost;
 }
 
 /**
- * @brief 
+ * @brief computes A, the outer weights of each tensor in a given state
  * 
- * @param s 
- * @param i 
+ * @param k the index int T of the tensor t we just calc'ed
+ * @param s the state we are currently at
  */
-void SLim::display_order(int s, int i){
-    int ofs = s*s + i;
-    switch(P[ofs]){
-        case -1:
-            break;
-        case 2:
-            cout << "|(" << O[ofs].first << ", " << O[ofs].second << ")|";
-            display_order(s+1, i+2);
-            break;
-        default:
-            cout << "|(" << O[ofs].first << ", " << O[ofs].second << ")|";
-            display_order(s+1, P[ofs]);
-            break;
-    }
-    cout << endl;
+void SLim::computeA(int s, int k){
+    A[s] = G[size*s + s+1]*T[k];
+    A[s+size/2] = G[size*(s+size/2) + s+1+size/2]*T[k];
 }
 
-void SLim::get_size(char* Preamble){
+/**
+ * @brief restores A to a given state
+ * 
+ * @param s the state
+ */
+void SLim::restoreA(int s){
+    A[s] = G[size*size + s]; //stock le poids sortant du sommet s
+    A[s+size/2] = G[size*size + s+size/2];
+}
 
-	char c;
-	char * pp = Preamble;
-	int stop = 0;
-	//tmp = (char *)calloc(100, sizeof(char));
-	int nbT;
-	
-	while (!stop && (c = *pp++) != '\0'){
-		switch (c){
-            case 'c':
-                while ((c = *pp++) != '\n' && c != '\0');
-                break;
-                
-            case 'p':
-                sscanf(pp, "%d\n", &nbT);
-                stop = 1;
-                break;
-                
-            default:
-                break;
+/**
+ * @brief displays the best contraction order using backtracking
+ * 
+ * @param s a state
+ * @param k the center-edge that lead to the best final cost
+ */
+void SLim::display_order(int s, int k){
+    int ofs = (s+1)*(s+1)-1;
+    if(s >= 0){
+        if(k > 1){
+            display_order(s-1, k-2);
+        }else{
+            display_order(s-1, Z[s]-2);
         }
-	}
-	size = nbT;
+        cout << "|" << O.at(ofs + k).first << " - " << O.at(ofs + k).second << "|";
+    }
 }
 
-void SLim::init(const char* file){
-    //hardcoder les poids voisinant les sommets dans un fichier texte
+void SLim::display_order(){
+    for(int i = 0; i < bestOrder.size()-1; i++){
+        cout << bestOrder[i] << " - ";
+    }
+    cout << bestOrder.back() << '\n';
+}
+
+void SLim::get_order(int s, int k){
+    int ofs = (s+1)*(s+1)-1;
+    if(s >= 0){
+        if(k > 1){
+            get_order(s-1, k-2);
+        }else{
+            get_order(s-1, Z[s]-2);
+        }
+        int e1 = O[ofs + k].first;
+        int e2 = O[ofs + k].second;
+
+        switch(e1){
+            case 0:
+                bestOrder.push_back(s);
+            break;
+            case 2:
+                bestOrder.push_back(size/2-1 + s);
+            break;
+            case 1:
+                bestOrder.push_back(size-1+s);
+            break;
+        }
+
+        switch(e2){
+            case 0:
+                bestOrder.push_back(s);
+            break;
+            case 2:
+                bestOrder.push_back(size/2-1 + s);
+            break;
+            case 1:
+                bestOrder.push_back(size-1 + s);
+            break;
+        }
+        //cout << "|" << O.at(ofs + k).first << " - " << O.at(ofs + k).second << "|";
+    }
+}
+
+void SLim::init(string file){
     G.clear();
     A.clear();
-    R.clear();
-    Q.clear();
+    P.clear();
     C.clear();
     T.clear();
-    P.clear();
-    Z.clear();
     O.clear();
+    Z.clear();
+    bestOrder.clear();
+    int kmax;
 
-    int MAX_PREAMBLE = 4000;
-	char* Preamble = new char [MAX_PREAMBLE];
-
-    int c, oc;
-	char* pp = Preamble;
-
+    ifstream ifile(file);
+    string line;
     int i, j, w;
-	FILE* fp;
-
-    if((fp=fopen(file,"r"))==NULL ){ 
-        printf("ERROR: Cannot open infile\n"); 
-        exit(10); 
-    }
-
-    for(oc = '\0';(c = fgetc(fp)) != EOF && (oc != '\n' || c != 'e'); 
-    oc = *pp++ = c);
-
-    ungetc(c, fp); 
-	*pp = '\0';
-
-    get_size(Preamble);
-
-    G.resize(size*(size+1), 1);
-    
-    A.resize(size*size/2, 1); //TODO: a voir si c'est nécessaire d'avoir un tableau aussi grand
-    
-    R.resize(size/2, -1);
-    Q.resize(size/2, -1);
-
-    C.resize((size*size)/4, -1); //nombre total de valeurs à calculer
-
-    T.resize(size/2, 1); //1 t par état, on peut réécrire par dessus sans soucis après être "remonté"
-    P.resize((size*size)/4, -1); //nombre total de valeurs à calculer
-    Z.resize(size/2,{-1, -1});
-    O.resize((size*size)/4, {-1, -1});
-
-	while ((c = fgetc(fp)) != EOF){
-		switch (c){
-            case 'e':
-                if (!fscanf(fp, "%d %d %d", &i, &j, &w)){ 
-                    printf("ERROR: corrupted inputfile\n"); 
-                    exit(10);
+    while(getline(ifile, line)){
+        istringstream flux(&line[2]);
+        switch(line[0]){
+            case 'p':
+                size = atoi(&line[2]);
+                if(delta <= 0){ //on pourrait mettre une inégalité stricte, celà impliquerait qu'on s'interdit de garder l'arête centrale, mais nécessiterait de modifier la boucle principal
+                    delta = size/2; //pk tu casses
                 }
+                kmax = 2*delta+1;
+                G.resize(size*(size+1), 1);
+                A.resize(size, 1);
+                P.resize(size, -1);
+                C.resize(min(2*(size/2)-1, kmax), 0); //tableau des coûts, //pk je peux pas adapter sa taille à delta :c
+                T.resize(min(2*(size/2)-1, kmax), 1); //tableau des t  //et lui non plus :c
+                O.resize(size*size/4, {-1, -1});
+                Z.resize(size/2, -1);
+            break;
+            case 'e':
+                flux >> i >> j >> w;
                 G[size*i + j] = w;
                 G[size*j + i] = w;
-                break;
-                
-            case '\n':
-                
+                G[size*size + i] *= w;
+                G[size*size + j] *= w;
+                A[i] *= w;
+                A[j] *= w;
+            break;
             default:
-                break;
-        }
-	}
-
-    for(int i = 0; i < size; i++){
-        for(int j = 0; j < size; j++){
-            G[size*size + i] *= G[size*j + i];
+            break;
         }
     }
-
-    T[0] = G[size/2];
-
-    for(int i = 0; i < size; i++){
-        for(int k = 0; k < size/2; k++){
-            A[size*k + i] = G[size*size + i];
-        }
-    }
-
-    fclose(fp);
-	delete[] Preamble;
 }
 
-void SLim::execfile(const char* file){
-    char path[100] = "../instances/";
-    strcat(path, file);
+void SLim::execfile(string file){
+    string path = "../instances/" + file;
     //cout << "Starting initialisation on : " << file << endl;
     init(path);
     //cout << "End of initialisation" << endl;
     //cout << "Starting solving" << endl;
-    //auto start = std::chrono::high_resolution_clock::now();
-    cout << "Best cost : " << solve(0, 0) << '\n';
-    
-    /*C[1*1 + 2] = contract(2, 0);
-    C[2*2 + 4] = contract(2, 1);
-    C[3*3 + 6] = contract(2, 2);
-    for(int i = 0; i < C.size(); i++){
-        cout << C[i] << '\n';
-    }*/
-    //auto end = std::chrono::high_resolution_clock::now();
-    //std::chrono::duration<double> tempsSeq = end-start;
-    //display_order(0, 0);
-    //std::cout << std::scientific << "Temps : " << tempsSeq.count()<< "s" << '\n';
+    cout << "Delta : " << delta << '\n';
+    auto start = std::chrono::high_resolution_clock::now();
+    bestCost = solve();
+    auto end = std::chrono::high_resolution_clock::now();
+    time = end-start;
+    cout << "Best cost : " << bestCost << '\n';
+    get_order(size/2-2, Z[size/2-1]);    
+    bestOrder.push_back(size-2);
+    cout << "Best order : ";
+    display_order();
+    std::cout << std::scientific << "Temps : " << time.count()<< "s" << '\n';
     cout << "--------------" << endl;
+    delta = -1;
 }
 
-void SLim::execdir(const char* dir){
-    char base[100] = "../instances/";
-    strcat(base, dir);
-    strcat(base, "/");
+void SLim::execdir(string dir){
+    string base = "../instances/" + dir = "/";
     DIR* dp = NULL;
     struct dirent *file = NULL;
-    dp = opendir(base);
-    
+    dp = opendir(base.c_str());
+    if(dp == NULL){
+        cerr << "Could not open directory : " << base << '\n';
+        exit(-1);
+    }
     file = readdir(dp);
     
     while(file != NULL){
         if(file->d_name[0] != '.'){
-            char path[100];
-            strcpy(path, base);
-            strcat(path, file->d_name);
-            cout << "FILE : " << path << endl;
+            string path = base = file->d_name;
+            display(path);
             execfile(path);
         }
         file = readdir(dp);

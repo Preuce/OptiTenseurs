@@ -7,8 +7,8 @@
 #include <dirent.h>
 #include <sys/types.h>
 
-void display(const char* file);
+void display(std::string file);
 
-void display_dir(const char* file);
+void display_dir(std::string file);
 
 #endif

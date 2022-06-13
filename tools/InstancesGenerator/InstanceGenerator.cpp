@@ -1,16 +1,16 @@
 #include "InstanceGenerator.hpp"
 #include <vector>
 
-void initInstances(int n, int min, int max, int amount, char* file){
-    char s [200];
-    char* path = "../instances/";
-    strcpy(s, path);
-    strcat(s, file);
-    strcat(s, "/");
+//Code de génération d'instance
+
+void initInstances(int n, int min, int max, int amount, string dir){
+    string path = "../instances/" + dir + "/";
+
     for(int i = 1; i <= amount; i++){
         string name = "instance_" + to_string(i) + "_" + to_string(n) + ".txt";
-        ofstream file(s + name);
+        ofstream file(path + name);
         if(file.is_open()){
+            //informations sur l'instances
             //c name
             //c Source
             file << "c FILE: " << name <<endl;
@@ -18,8 +18,10 @@ void initInstances(int n, int min, int max, int amount, char* file){
             file << "c min : " << min << endl;
             file << "c max : " << max << endl;
 
+            //représentation du TT
             vector<string> display(3, "v ");
-            vector<int> weights(3*(n/2) - 2);
+            vector<int> weights(3*(n/2) - 2); //nombre d'arêtes à générer
+            //attribution des poids
             for(int i = 0; i < weights.size(); i++){
                 weights[i] = min + rand()%(max+1 - min);
             }
@@ -37,20 +39,18 @@ void initInstances(int n, int min, int max, int amount, char* file){
             file << display[1] << '\n';
             file << display[2] << '\n';
 
+            //taille du TT
             //p carac
             file << "p " << n << endl;
-            
+
+            //arêtes (sommet, sommet, poids)            
             //e edges
-            //tant qu'on a pas placé ..., on fait
             for(int i = 0; i < n/2 - 1; i++){
                 file << "e " << i << " " << i+1 << " " << weights[i] << endl;
                 file << "e " << i << " " << i+n/2 << " " << weights[n/2-1+i]  << endl;
                 file << "e " << i+n/2 << " " << i+n/2+1 << " " << weights[n-1+i] << endl;
             }
             file << "e " << n/2 - 1 << " " << n - 1 << " " << weights[n-2] << endl;
-            //for(int i = n/2; i < n - 1; i++){
-            //    file << "e " << i << " " << i+1 << " " <<  << endl;
-            //}
         }else{
             printf("ERROR: Cannot open outfile\n");
         }
@@ -62,23 +62,23 @@ int main(int argc, char* argv[]){
 
     for(int i = 1; i < argc - 1; i++){
         switch(*argv[i]){
-            case 'm':
+            case 'm': //poids min
                 m = atoi(argv[i+1]);
                 i++;
                 break;
-            case 'M':
+            case 'M': //poids max
                 M = atoi(argv[i+1]);
                 i++;
                 break;
-            case 'n':
+            case 'n': //nombre d'instances
                 amount = atoi(argv[i+1]);
                 i++;
                 break;
-            case 's':
+            case 's': //nombre de sommets
                 size = atoi(argv[i+1]);
                 i++;
                 break;
-            case 'd':
+            case 'd': //répertoire
                 dir = argv[i+1];
                 i++;
                 break;

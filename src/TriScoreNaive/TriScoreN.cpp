@@ -1,80 +1,46 @@
-#include "TriScore.hpp"
+#include "TriScoreN.hpp"
 
-/**
- * @brief solves G
- * 
- * @return int 
- */
-Cost TriScore::solve(){
-    int cost = 0;
-    //tant qu'il reste des arêtes
-    while(!R.empty()){
-        bestOrder.push_back(R.front().first);
-        //les vraies extrémités de l'arête
-        int i = C(E[R.front().first].first);
-        int k = C(E[R.front().first].second);
-        if(i != k){
-            //ajoute le coût de contraction de R.front à cost
-            cost += ext_cost(i, k)*G[size*i + k];
-            contract(i, k);
-        }
-        //suppression de l'arête
-        R.erase(R.begin());
-
-        //update du tableau des ratio
-        updateRatio();
-    }
-    return cost;
-}
-
-/**
- * @brief updates the sorted list of scores R
- * Sub-optimal, but time is not an issue here
- */
-void TriScore::updateRatio(){
+Cost NTS::solve(){
+    bestCost = 0;
+    //l'ordre R a été défini à l'initialisation
     for(auto& p : R){
-        int i = C(E[p.first].first);
-        int k = C(E[p.first].second);
-        p.second = G[size*i + k]/(float) ext_cost(i, k);
+        bestCost += contract(p.first);
     }
-    sort(R.begin(), R.end(), [](pair<int, double> a, pair<int, double> b){return a.second > b.second;});
+    return bestCost;
 }
 
 /**
- * @brief Computes the external cost of 2 vertex
+ * @brief Computes the cost of contracting an edge i in the graph G, and updates G and V
  * 
  * @param i 
- * @param k 
  * @return Cost 
  */
-Cost TriScore::ext_cost(int i, int k){
-    int res = 1;
-    for(int j = 0; j < size; j++){
-        if(k != j){
-            res *= max(1, G[size*i + j]);
-        }
-        if(i != j){ 
-            res *= max(1, G[size*k + j]);
-        }
-    }
+Cost NTS::contract(int i){
+    int a = C(E[i].first);
+    int b = C(E[i].second);
 
-    return res;
-}
+    if(a != b){
+        int res = G[size*a + b];
+        for(int j = 0; j < size; j++){
+            if(a != j){
+                res *= max(1, G[size*b + j]);
+            }
+            if(b != j){ 
+                res *= max(1, G[size*a + j]);
+            }
+        }
 
-/**
- * @brief contracts an edge by modifying G and V accordingly
- * 
- * @param i
- * @param k
- */
-void TriScore::contract(int i, int k){
-    for(int j = 0; j < size; j++){
-        G[size*i + j] *= G[size*k + j];
-        G[size*k + j] = 0;
-        G[size*j + k] = 0;
-        G[size*j + i] = G[size*i + j];
+        for(int j = 0; j < size; j++){
+            G[size*a + j] *= G[size*b + j];
+            G[size*b + j] = 0;
+            G[size*j + b] = 0;
+            G[size*j + a] = G[size*a + j];
+        }
+        V[b] = a;
+        return res;
+    }else{
+        return 0;
     }
-    V[k] = i;
 }
 
 /**
@@ -83,7 +49,7 @@ void TriScore::contract(int i, int k){
  * @param i 
  * @return int 
  */
-int TriScore::C(int i){
+int NTS::C(int i){
     if(V[i] == -1){
         return i;
     }else{
@@ -92,21 +58,39 @@ int TriScore::C(int i){
 }
 
 /**
- * @brief displays O, the order followed by the heuristic
+ * @brief Computes the ratio (weight^2/contraction cost) of an edge
  * 
+ * @param i 
+ * @return double 
  */
-void TriScore::display_order(){
+double NTS::ratio(int i){
+    int a = E[i].first;
+    int b = E[i].second;
+    int res = 1;
+    for(int j = 0; j < size; j++){
+        if(a != j){
+            res *= max(1, G[size*b + j]);
+        }
+        if(b != j){ 
+            res *= max(1, G[size*a + j]);
+        }
+    }
+
+    return G[size*a + b]/(double) res;
+}
+
+void NTS::display_order(){
     for(int i = 0; i < bestOrder.size()-1; i++){
         cout << bestOrder[i] << " - ";
     }
     cout << bestOrder.back() << '\n';
 }
 
-void TriScore::init(string file){
+void NTS::init(string file){
     G.clear();
+    E.clear();
     R.clear();
     V.clear();
-    E.clear();
     bestOrder.clear();
 
     ifstream ifile(file);
@@ -130,23 +114,24 @@ void TriScore::init(string file){
             break;
         }
     }
+    sort_edges(E);
 
-    for(int i = 0; i < size; i ++){
+    for(int i = 0; i < size; i++){
         G[size*i + i] = 0;
     }
 
-    sort_edges(E);
-
     for(int i = 0; i < E.size(); i++){
-        int j = E[i].first;
-        int k = E[i].second;
-        R.push_back(make_pair(i, G[size*j  + k]/ (float) ext_cost(j, k)));
+        R.push_back(make_pair(i, ratio(i)));
     }
 
     sort(R.begin(), R.end(), [](pair<int, double> a, pair<int, double> b){return a.second > b.second;});
+
+    for(auto& p : R){
+        bestOrder.push_back(p.first);
+    }
 }
 
-void TriScore::execfile(string file){
+void NTS::execfile(string file){
     string path = "../instances/" + file;
     //cout << "Starting initialisation on : " << file << endl;
     init(path);
@@ -163,7 +148,7 @@ void TriScore::execfile(string file){
     cout << "--------------" << endl;
 }
 
-void TriScore::execdir(string dir){
+void NTS::execdir(string dir){
     string base = "../instances/" + dir + "/";
     DIR* dp = NULL;
     struct dirent *file = NULL;
@@ -183,12 +168,4 @@ void TriScore::execdir(string dir){
         file = readdir(dp);
     }
     closedir(dp);
-}
-
-void get_approx_solution(int& cost, Tab& O, string file){
-    TriScore solver;
-    solver.init(file.c_str());
-    solver.solve();
-    cost = solver.bestCost;
-    O = solver.bestOrder;
 }

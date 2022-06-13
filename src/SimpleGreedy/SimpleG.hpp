@@ -2,6 +2,13 @@
 #define SIMPLEG_HPP
 #include "../Components.hpp"
 
+/**
+ * @brief Algorithme glouton calculant le meilleurs coût en ne considérant que les liens effectifs entre les sommets
+ * Complexité : 2^3D
+ * 
+ * A priori pas de problème pour le faire en TOP -> DOWN
+ */
+
 class SouG{
     public:
     Tab S;
@@ -23,6 +30,10 @@ class SimpleG{
     Tab O;
     Tab C;
 
+    Cost bestCost;
+    Tab bestOrder;
+    std::chrono::duration<double> time;
+
     SouG getSG(){SouG sg; sg.set(S, G, vector<int> (size, -1)); return sg;}
     Cost contract(int i, SouG& sg);
     void cheap_contract(int i, SouG& sg);
@@ -33,10 +44,12 @@ class SimpleG{
     Tab get_Tab(int key);
 
     void display_order(int key);
+    void display_order();
+    void get_order(int key);
 
-    void init(const char* file);
+    void init(string file);
 
-    void execfile(const char* file);
-    void execdir(const char* dir);
+    void execfile(string file);
+    void execdir(string dir);
 };
 #endif

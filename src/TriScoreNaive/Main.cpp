@@ -1,10 +1,10 @@
-#include "TriScore.hpp"
+#include "TriScoreN.hpp"
 
 int main(int argc, char* argv[]){
-    TriScore solver;
+    NTS solver;
     switch(argc){
         case 1:
-            cerr << "Missing argument : instance file" << '\n';
+            cerr << "Missing argument : instance file" << endl;
             exit(-1);
             break;
         case 2:
@@ -17,7 +17,7 @@ int main(int argc, char* argv[]){
             }
             break;
         default:
-            cerr << "Call error : wrong argument" << '\n';
+            cerr << "Call error : wrong argument" << endl;
             exit(-1);
             break;
     }

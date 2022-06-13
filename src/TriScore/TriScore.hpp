@@ -2,6 +2,19 @@
 #define TRISCORE_HPP
 #include "../Components.hpp"
 
+/**
+ * @brief Algorithme naïf contractant l'arête maximisant le ratio (poids^2 / coût de contraction) à chaque étape
+ */
+
+/**
+ * @brief Executes the solver on an instance file, and stores the resulting cost and order, for another algorithm to use
+ * 
+ * @param cost 
+ * @param O 
+ * @param file 
+ */
+void get_approx_solution(int& cost, Tab& O, string file);
+
 class TriScore{
     public:
     int size;
@@ -9,7 +22,10 @@ class TriScore{
     vector<pair<int, double>> R; //La liste des scores triés
     vector<pair<int, int>> E; //la liste des arètes
     Tab V; //la correspondance entre les sommets (tkt)
-    Tab O; //l'ordre
+
+    Tab bestOrder; //l'ordre
+    int bestCost;
+    std::chrono::duration<double> time;
 
     Cost solve();
     //met à jour la liste des score après suppression d'une arète
@@ -21,9 +37,9 @@ class TriScore{
 
     void display_order();
 
-    void init(const char* file);
+    void init(string file);
 
-    void execfile(const char* file);
-    void execdir(const char* dir);
+    void execfile(string file);
+    void execdir(string dir);
 };
 #endif
