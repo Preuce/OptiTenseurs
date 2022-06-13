@@ -11,16 +11,16 @@ The goal of this project is to implement algorithms capable of finding the best 
 When in the 'build' directory, use 'cmake .' to set up the compiler, then 'make' followed by the name of the program (or none to compile everything). Here are the programs you can build :
 * Compute, to test the cost of a specific contraction order
 * InitInstances, to generate instances
-* Solver
-* SolverMatrix
-* SolverTS
-* SolverMTS
-* SolverNTS
-* SolverSideI
-* SolverSideL
-* SolverSplit
-* SolverVSplit
-* SolverSimpleG
+* Solver, main program that can execute every other solver, display the TT, and export the results
+* SolverMatrix, greedy algorithm iterating on every pair of nodes
+* SolverTS, sorts every edges by weights^2/contraction_cost, and contracts the edge with the best ratio at each step
+* SolverMTS, uses TS's order as reference, and shakes it to try and improve it
+* SolverNTS, same as TS but defines the order to follow at the beggining and never updates it
+* SolverSideI, contracts a TT from a side
+* SolverSideL, same as SideI, but limits how many central edges can merge in a row, using a user-set parameters DELTA.
+* SolverSplit, greedy algorithm iterating on every split of 2 sets of nodes
+* SolverVSplit, heuristic that splits the TT in pieces of max size DELTA, then solves them using any greedy algorithm
+* SolverSimpleG, greedy algorithms iterating on every edges
 
 # Instances
 Instances are text files located in the 'instances' directory. They can be read by the programs in order to be solved.
@@ -50,6 +50,7 @@ There is no limit to how many file/order you can put
 # Commands
 Use './Program instance_file' or './Program d directory' to use an algorithm on a single TT, or on an entire directory. ('instances/' is considered as the root directory)
 On top of this, you can use './Solver v instance_file' or './Solver vd directory' to display a single instance, or an entire directory.
+If a heuristic uses an extra parameter DELTA, it can be set using 'r value'.
 
 # Results
 The result of the execution of ./Solver can be found in 'results/results.txt'
