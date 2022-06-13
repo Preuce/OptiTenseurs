@@ -40,7 +40,7 @@ The parameters are the following :
 * 'M number' the maximum weight present in the TT (default : 9)
 
 # Testing
-You can test contractions orders on specific instances by using the Compute program
+You can test contractions orders on specific instances by using the Compute program  
 Compute takes a text file from the 'calc' directory (test.txt by default) and reads it.
 These text file must be formatted in the following way :
 * 'f instance_file'
