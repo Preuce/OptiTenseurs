@@ -31,7 +31,7 @@ They are formatted in the following way :
 * Lines starting with 'e' describe edges, they read 'node1 node2 weight'
 
 # Generating instances
-Instances can be generated using ./InitInstances while in the 'build' directory.
+Instances can be generated using ./InitInstances while in the 'build' directory.  
 The parameters are the following :
 * 'd directory' to choose where to create the files ('instances/' is considered as the root directory)
 * 'n number' the amount of instances to generate (default : 1)
@@ -41,17 +41,17 @@ The parameters are the following :
 
 # Testing
 You can test contractions orders on specific instances by using the Compute program  
-Compute takes a text file from the 'calc' directory (test.txt by default) and reads it.
+Compute takes a text file from the 'calc' directory (test.txt by default) and reads it.  
 These text file must be formatted in the following way :
 * 'f instance_file'
 * 'o number_edge1 number_edge2 number_edge3...'
 There is no limit to how many file/order you can put
 
 # Commands
-Use './Program instance_file' or './Program d directory' to use an algorithm on a single TT, or on an entire directory. ('instances/' is considered as the root directory)
-On top of this, you can use './Solver v instance_file' or './Solver vd directory' to display a single instance, or an entire directory.
+Use './Program instance_file' or './Program d directory' to use an algorithm on a single TT, or on an entire directory. ('instances/' is considered as the root directory)  
+On top of this, you can use './Solver v instance_file' or './Solver vd directory' to display a single instance, or an entire directory.  
 If a heuristic uses an extra parameter DELTA, it can be set using 'r value'.
 
 # Results
-The result of the execution of ./Solver can be found in 'results/results.txt'
-Can be seen the time, best cost and (if available) the best order for each algorithm.
+The result of the execution of ./Solver can be found in 'results/results.txt'  
+Can be seen : the time, best cost and (if available) the best order for each algorithm.
