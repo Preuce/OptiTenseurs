@@ -10,7 +10,7 @@ set(TOOLS
 #SolverMatrix
 set(MATRIX ../src/Matrice/)
 
-#SolverTriScore
+#SolverTS
 set(TS ../src/TriScore/)
 
 #SolverMTS
@@ -30,6 +30,9 @@ set(SPLIT ../src/Split/)
 
 #SolverVSplit
 set(VSPLIT ../src/VerticalSplit/)
+
+#SolverESplit
+set(ESPLIT ../src/EdgeSplit/)
 
 #SolverSimpleG
 set(SIMPLEGREEDY ../src/SimpleGreedy/)
@@ -57,6 +60,7 @@ add_executable(SolverMatrix ${MATRIX}MatrixSolver.cpp ${MATRIX}Main.cpp ${TOOLS}
 add_executable(SolverSimpleG ${SIMPLEGREEDY}SimpleG.cpp ${SIMPLEGREEDY}Main.cpp ${TOOLS})
 add_executable(SolverSplit ${SPLIT}SplitSolver.cpp ${SPLIT}Main.cpp ${TOOLS})
 add_executable(SolverVSplit ${VSPLIT}VerticalSplitSolver.cpp ${VSPLIT}Main.cpp ${SPLIT}SplitSolver.cpp ${TOOLS})
+add_executable(SolverESplit ${ESPLIT}EdgeSplit.cpp ${ESPLIT}Main.cpp ${TS}TriScore.cpp ${TOOLS})
 add_executable(SolverSideI ${SIDEITER}SideExSolver.cpp ${SIDEITER}Main.cpp ${TOOLS})
 add_executable(SolverSideL ${SIDELIM}SideLimSolver.cpp ${SIDELIM}Main.cpp ${TOOLS})
 add_executable(SolverTS ${TS}TriScore.cpp ${TS}Main.cpp ${TOOLS})

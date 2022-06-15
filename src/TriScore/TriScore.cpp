@@ -6,7 +6,7 @@
  * @return int 
  */
 Cost TriScore::solve(){
-    int cost = 0;
+    bestCost = 0;
     //tant qu'il reste des arêtes
     while(!R.empty()){
         bestOrder.push_back(R.front().first);
@@ -15,7 +15,7 @@ Cost TriScore::solve(){
         int k = C(E[R.front().first].second);
         if(i != k){
             //ajoute le coût de contraction de R.front à cost
-            cost += ext_cost(i, k)*G[size*i + k];
+            bestCost += ext_cost(i, k)*G[size*i + k];
             contract(i, k);
         }
         //suppression de l'arête
@@ -24,7 +24,7 @@ Cost TriScore::solve(){
         //update du tableau des ratio
         updateRatio();
     }
-    return cost;
+    return bestCost;
 }
 
 /**
@@ -153,7 +153,7 @@ void TriScore::execfile(string file){
     //cout << "End of initialisation" << endl;
     //cout << "Starting solving" << endl;
     auto start = std::chrono::high_resolution_clock::now();
-    bestCost = solve();
+    solve();
     auto end = std::chrono::high_resolution_clock::now();
     time = end-start;
     cout << "Best cost : " << bestCost << '\n';
