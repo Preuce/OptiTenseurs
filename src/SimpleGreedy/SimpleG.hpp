@@ -1,7 +1,6 @@
 #ifndef SIMPLEG_HPP
 #define SIMPLEG_HPP
 #include "../Components.hpp"
-
 /**
  * @brief Algorithme glouton calculant le meilleurs coût en ne considérant que les liens effectifs entre les sommets
  * Complexité : 2^3D
@@ -27,8 +26,10 @@ class SimpleG{
     vector<pair<int, int>> E; //liste des arêtes (fixe)
     Tab G; //size*(size+1)
     Tab S;
-    Tab O;
-    Tab C;
+    //Tab O;
+    //Tab C;
+    unordered_map<unsigned long long, int> O;
+    unordered_map<unsigned long long, Cost> C;
 
     Cost bestCost;
     Tab bestOrder;
@@ -40,12 +41,11 @@ class SimpleG{
 
     Cost solve(SouG& sg);
 
-    int get_key(Tab S);
-    Tab get_Tab(int key);
+    unsigned long long get_key(Tab S);
 
-    void display_order(int key);
+    void display_order(unsigned long long key);
     void display_order();
-    void get_order(int key);
+    void get_order(unsigned long long key);
 
     void init(string file);
 

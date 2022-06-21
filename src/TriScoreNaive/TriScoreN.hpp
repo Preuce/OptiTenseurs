@@ -7,7 +7,7 @@
  * L'ordre de contraction est calculée au départ et n'est jamais mis à jour
  */
 
-class NTS{
+class NTS /*: public Algorithm*/{
     public:
     int size;
     Tab G;

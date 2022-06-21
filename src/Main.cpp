@@ -3,10 +3,18 @@
 #include "SideIter/SideExSolver.hpp"
 #include "SideLimited/SideLimSolver.hpp"
 #include "Split/SplitSolver.hpp"
+#include "EdgeSplit/EdgeSplit.hpp"
 #include "TriScore/TriScore.hpp"
 #include "TriScoreMargin/TriScoreM.hpp"
 #include "TriScoreNaive/TriScoreN.hpp"
 #include "SimpleGreedy/SimpleG.hpp"
+#include <signal.h>
+#include <chrono>
+#include <thread>
+#include <unistd.h>
+#include <condition_variable>
+
+using namespace chrono_literals;
 
 MatrixSolver matrix;
 SplitRange splitrange;
@@ -14,13 +22,78 @@ SimpleG simpleg;
 SideIter sideiter;
 SLim sidelim;
 Split split;
+ESplit esplit;
 TriScore triscore;
 TriScoreM mts;
 NTS nts;
 
 ofstream result_file("../results/results.txt");
+ofstream cost_file("../results/cost.csv");
+ofstream time_file("../results/time.csv");
 string instance_dir;
 string instance_file;
+
+template<typename T>
+void execfile(T& solver)
+{
+    condition_variable cv;
+    mutex mtx;
+
+    /*pid_t idt;
+    bool wait = true;
+    int loop = 0;*/
+
+    std::thread t1([/*&idt, &wait, */&solver, &cv](){
+        //idt = gettid();
+        solver.execfile(instance_file);
+        cv.notify_all();
+        //wait = false;
+    });
+    pthread_t tid = t1.native_handle();
+    t1.detach();
+    /*while(wait && loop < 40){
+        this_thread::sleep_for(100ms);
+        loop++;
+    }
+    kill(idt, SIGCONT);*/
+    std::unique_lock<std::mutex> lock(mtx);
+    auto status = cv.wait_for(lock, 1s);
+
+    // si timeout il y a, on tue le thread
+    if (status == std::cv_status::timeout) {
+        pthread_cancel(tid);
+    }
+}
+
+void init_csv(){
+    /*size, Split, VSplit, EdgeSplit, SideIter, SideLim, SimpleG, TriScore*/
+    string header = "size, Matrix, Split, VSplit, EdgeSplit, SideIter, SideLim, SimpleG, TriScore \n";
+    cost_file << header;
+    time_file << header;
+}
+
+void get_size(){
+    string path = "../instances/" + instance_file;
+    string filename(path);
+    string line;
+    ifstream input_file(filename);
+    if (!input_file.is_open()) {
+        cerr << "Could not open the file - '"
+             << filename << "'" << endl;
+        exit(-1);
+    }
+
+     while(getline(input_file, line)){
+        if(line.size() > 2){
+            if(line[0] == 'p'){
+                cost_file << &line[2] << ", ";
+                time_file << &line[2] << ", ";
+                break;
+            }
+        }
+     }
+
+}
 
 void export_display(){
     string path = "../instances/" + instance_file;
@@ -80,26 +153,46 @@ void export_order(Tab O){
 void export_matrix(){
     cout << "--- Matrix ---" << '\n';
     result_file << "--- Matrix ---" << '\n';
-    matrix.execfile(instance_file);
+    execfile(matrix);
     result_file << "Best cost* : " << matrix.bestCost << '\n'; 
     result_file << "Time : " << matrix.time.count() <<endl;
+
+    cost_file << matrix.bestCost << ", ";
+    time_file << matrix.time.count() << ", ";
 }
 
 void export_split(){
     cout << "--- Split ---" << '\n'; 
     result_file << "--- Split ---" << '\n';
-    split.execfile(instance_file);
+    execfile(split);
     result_file << "Best cost* : " << split.bestCost << '\n';
     result_file << "Time : " << split.time.count() << endl;
+
+    cost_file << split.bestCost << ", ";
+    time_file << split.time.count() << ", ";
+}
+
+void export_esplit(){
+    cout << "--- EdgeSplit ---" << '\n'; 
+    result_file << "--- EdgeSplit ---" << '\n';
+    execfile(esplit);
+    result_file << "Best cost* : " << esplit.bestCost << '\n';
+    result_file << "Time : " << esplit.time.count() << endl;
+
+    cost_file << esplit.bestCost << ", ";
+    time_file << esplit.time.count() << ", ";
 }
 
 void export_simpleg(){
     cout << "--- SimpleGreedy ---" << '\n';
     result_file << "--- SimpleGreedy ---" << '\n';
-    simpleg.execfile(instance_file);
+    execfile(simpleg);
     result_file << "Best cost* : " << simpleg.bestCost << '\n';
     export_order(simpleg.bestOrder);
     result_file << "Time : " << simpleg.time.count() << endl;
+
+    cost_file << simpleg.bestCost << ", ";
+    time_file << simpleg.time.count() << ", ";
 }
 
 void export_vsplit(){
@@ -107,18 +200,24 @@ void export_vsplit(){
     result_file << "--- VSplit ---" << '\n';
     splitrange.delta = 3;
     result_file << "Delta : " << splitrange.delta << '\n'; 
-    splitrange.execfile(instance_file);
+    execfile(splitrange);
     result_file << "Best cost : " << splitrange.bestCost << '\n';
     result_file << "Time : " << splitrange.time.count() << endl;
+
+    cost_file << splitrange.bestCost << ", ";
+    time_file << splitrange.time.count() << ", ";
 }
 
 void export_sideiter(){
     cout << "--- SideIter ---" << '\n';
     result_file << "--- SideIter ---" << '\n';
-    sideiter.execfile(instance_file);
+    execfile(sideiter);
     result_file << "Best cost : " << sideiter.bestCost << '\n';
     export_order(sideiter.bestOrder);
     result_file << "Time : " << sideiter.time.count() << endl;
+
+    cost_file << sideiter.bestCost << ", ";
+    time_file << sideiter.time.count() << ", ";
 }
 
 void export_sidelim(){
@@ -126,26 +225,32 @@ void export_sidelim(){
     result_file << "--- SideLimited ---" << '\n';
     sidelim.delta = 3;
     result_file << "Delta : " << sidelim.delta << '\n';
-    sidelim.execfile(instance_file);
+    execfile(sidelim);
     result_file << "Best cost : " << sidelim.bestCost << '\n';
     export_order(sideiter.bestOrder);
     result_file << "Time : " << sidelim.time.count() << endl;
+
+    cost_file << sidelim.bestCost << ", ";
+    time_file << sidelim.time.count() << ", ";
 }
 
 void export_triscore(){
     cout << "--- TriScore ---" << '\n';
     result_file << "--- TriScore ---" << '\n';
-    triscore.execfile(instance_file);
+    execfile(triscore);
     result_file << "Best cost : " << triscore.bestCost << '\n';
     export_order(triscore.bestOrder);
     result_file << "Time : " << triscore.time.count() << endl;
+
+    cost_file << triscore.bestCost << endl;
+    time_file << triscore.time.count() << endl;
 }
 
 void export_mts(){
     cout << "--- TriScoreMargin ---" << '\n';
     result_file << "--- TriScoreMargin ---" << '\n';
     mts.delta = 3;
-    mts.execfile(instance_file);
+    execfile(mts);
     result_file << "Delta : " << mts.delta << '\n'; 
     result_file << "Best cost : " << mts.bestCost << '\n';
     export_order(mts.bestOrder);
@@ -155,7 +260,7 @@ void export_mts(){
 void export_nts(){
     cout << "--- TriScoreNaive ---" << '\n';
     result_file << "--- TriScoreNaive ---" << '\n';
-    nts.execfile(instance_file);
+    execfile(nts);
     result_file << "Best cost : " << nts.bestCost << '\n';
     export_order(nts.bestOrder);
     result_file << "Time : " << nts.time.count() << endl;
@@ -166,27 +271,32 @@ void execfile(){
     display(instance_file);
     export_display();
 
-    export_matrix();
+    get_size();
 
-    export_split();
+    //export_matrix(); //seems ok
     
+    //export_split();
+
+    //export_vsplit();
+
+    //export_esplit();
+
+    //export_sideiter();
+
+    //export_sidelim();
+
     export_simpleg();
 
-    export_vsplit();
+    //export_triscore();
 
-    export_sideiter();
+    //export_mts();
 
-    export_sidelim();
-
-    export_triscore();   
-
-    export_mts();
-
-    export_nts();
+    //export_nts();
     result_file << "----------" << "\n\n";
 }
 
 void execdir(){
+    init_csv();
     string directory = "../instances/" + instance_dir + "/";
     DIR* dp = NULL;
     struct dirent *file = NULL;

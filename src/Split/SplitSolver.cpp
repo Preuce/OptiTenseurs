@@ -141,12 +141,14 @@ void Split::display_order(Tab S){//dégueulasse
 }
 
 void Split::init(string file){
+    cout << "Clearing" << '\n';
     S.clear();
     G.clear();
     A.clear();
     C.clear();
     P1.clear();
     P2.clear();
+    cout << "End of clear" << '\n';
 
     ifstream ifile(file);
     string line;
@@ -155,14 +157,22 @@ void Split::init(string file){
         istringstream flux(&line[2]);
         switch(line[0]){
             case 'p':
+                cout << "Start of resize" << '\n';
                 size = atoi(&line[2]);
-                G.resize(size*size, 1);
+                
+                //G.resize(size*size, 1);*
+                cout << "S" << '\n';
                 S.resize(size);
+                cout << "G" <<'\n';
                 G.resize(size*(size+1), 1);
+                cout << "A" << '\n';
                 A.resize(size*size, 1);
+                cout << "C" << '\n';
                 C.resize(pow(2, size), -1);
+                cout << "P" << '\n';
                 P1.resize(pow(2, size), -1);
                 P2.resize(pow(2,size), -1);
+                cout << "End of resize" << "\n";
             break;
             case 'e':
                 flux >> i >> j >> w;
@@ -175,20 +185,23 @@ void Split::init(string file){
             break;
         }
     }
+    cout << "End of import" << '\n';
 
     for(int k = 0; k < size; k ++){
         S[k] = k;
     }
+    cout << size << '\n';
 }
 
 void Split::execfile(string file){
     string path = "../instances/" + file;
-    //cout << "Starting initialisation on : " << file << endl;
+    cout << "Starting initialisation on : " << file << '\n';
     init(path);
-    //cout << "End of initialisation" << endl;
-    //cout << "Starting solving" << endl;
+    cout << "End of initialisation" << '\n';
+    cout << "Starting solving" << '\n';
     auto start = std::chrono::high_resolution_clock::now();
     bestCost = solve(S);
+    cout << "End of solving" << '\n';
     auto end = std::chrono::high_resolution_clock::now();
     time = end-start;
     cout << "Best cost* : " << bestCost << '\n';

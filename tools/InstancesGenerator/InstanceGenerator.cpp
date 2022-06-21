@@ -5,7 +5,9 @@
 
 void initInstances(int n, int min, int max, int amount, string dir){
     string path = "../instances/" + dir + "/";
-
+    if(n%2!= 0){
+        n--;
+    }
     for(int i = 1; i <= amount; i++){
         string name = "instance_" + to_string(i) + "_" + to_string(n) + ".txt";
         ofstream file(path + name);

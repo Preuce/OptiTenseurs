@@ -7,7 +7,9 @@ Cost SimpleG::solve(SouG& sg){
     SouG sgref = sg; 
 
     //cas où il reste plusieurs arêtes, et le coût de l'ensemble n'a pas encore été calculé
-    if(sg.S.size() > 1 && C[key] == -1){
+    if(sg.S.size() > 1 && C.find(key) == C.end()){
+        C[key] = bestCost+1;
+
         for(int i = 0; i < sgref.S.size(); i++){
             //on copie la copie, et on laisse l'arête en cours de côté
             SouG sg2 = sgref;
@@ -17,19 +19,19 @@ Cost SimpleG::solve(SouG& sg){
             Cost cost = solve(sg2);
             //on contract finalement l'arête mise de côté
             cost += contract(sgref.S[i], sg2);
-            if((cost < C[key] || C[key] == -1) && cost > 0){
+            if(cost < C[key] && cost > 0){
                 //mémoïsation
                 C[key] = cost;
-                O[key] = sgref.S[i];
+                //O[key] = sgref.S[i];
                 //mise à jour de SG pour faire remonter G et V
                 sg.G = sg2.G; 
                 sg.V = sg2.V;
             }
         }
-    }else if(C[key] == -1){
+    }else if(C.find(key) == C.end()){
         //si il ne reste qu'une arête mais que le coût n'a pas été calculé
         C[key] = contract(sg.S[0], sg);
-        O[key] = sg.S[0];
+        //O[key] = sg.S[0];
     }else{
         //cas où C[key] est déjà calculé, on a quand même besoin de connaître l'état du graphe suite aux contractions
         //on connait l'ensemble des arêtes qui ont été contractées : sg.S
@@ -125,8 +127,8 @@ int SouG::C(int i){
  * @param S 
  * @return int 
  */
-int SimpleG::get_key(Tab S){
-    int res = 0;
+unsigned long long SimpleG::get_key(Tab S){
+    unsigned long long res = 0;
     for(int i : S){
         res += pow(2, i);
     }
@@ -138,9 +140,9 @@ int SimpleG::get_key(Tab S){
  * 
  * @param key 
  */
-void SimpleG::display_order(int key){
+void SimpleG::display_order(unsigned long long key){
     int i = O[key]; //i = la meilleure arête à contracter pour l'état key-2^i + 1
-    int next = key-pow(2, i);
+    unsigned long long next = key-pow(2, i);
     if(key == get_key(S)){
         display_order(next);
         cout << i << '\n';
@@ -160,10 +162,10 @@ void SimpleG::display_order(){
 
 }
 
-void SimpleG::get_order(int key){
+void SimpleG::get_order(unsigned long long key){
     bestOrder.clear();
     int i = O[key];
-    int next = key-pow(2, i);
+    unsigned long long next = key-pow(2, i);
     if(next >= 0){
         get_order(next);
         bestOrder.push_back(i);
@@ -179,6 +181,7 @@ void SimpleG::init(string file){
     C.clear();
     S.clear();
 
+    bestCost = INT32_MAX-1;
     bestOrder.clear();
 
     ifstream ifile(file);
@@ -191,8 +194,8 @@ void SimpleG::init(string file){
                 size = atoi(&line[2]);
                 G.resize(size*size, 1);
                 S.resize(3*size/2 - 2);
-                O.resize(pow(2, 3*size/2-2)-1, -1);
-                C.resize(pow(2, 3*size/2-2)-1, -1);
+                //O.resize(pow(2, 3*size/2-2)-1, -1);
+                //C.resize(pow(2, 3*size/2-2)-1, -1);
             break;
             case 'e':
                 flux >> i >> j >> w;
@@ -220,9 +223,9 @@ void SimpleG::init(string file){
 void SimpleG::execfile(string file){
     string path = "../instances/" + file;
 
-    //cout << "Starting initialisation on : " << file << endl;
+    cout << "Starting initialisation on : " << file << '\n';
     init(path);
-    //cout << "End of initialisation" << endl;
+    cout << "End of initialisation" << '\n';
     //cout << "Starting solving" << endl;
     auto start = std::chrono::high_resolution_clock::now();
     bestCost = solve(sgref);
@@ -230,8 +233,8 @@ void SimpleG::execfile(string file){
     time = end-start;
     cout << "Best cost* : " << bestCost << endl;
     cout << "Best order : ";
-    get_order(get_key(S));
-    display_order();
+    //get_order(get_key(S));
+    //display_order();
     std::cout << std::scientific << "Temps : " << time.count()<< "s" << std::endl;
     cout << "--------------" << endl;
 }

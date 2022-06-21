@@ -50,7 +50,8 @@ set(ALGORITHMS
     ${MTS}TriScoreM.cpp
     ${NTS}TriScoreN.cpp
     ${VSPLIT}VerticalSplitSolver.cpp 
-    ${SPLIT}SplitSolver.cpp 
+    ${SPLIT}SplitSolver.cpp
+    ${ESPLIT}EdgeSplit.cpp
     ${SIDEITER}SideExSolver.cpp
     ${SIDELIM}SideLimSolver.cpp
     ${SIMPLEGREEDY}SimpleG.cpp
@@ -66,6 +67,8 @@ add_executable(SolverSideL ${SIDELIM}SideLimSolver.cpp ${SIDELIM}Main.cpp ${TOOL
 add_executable(SolverTS ${TS}TriScore.cpp ${TS}Main.cpp ${TOOLS})
 add_executable(SolverMTS ${MTS}TriScoreM.cpp ${MTS}Main.cpp ${TS}TriScore.cpp ${TOOLS})
 add_executable(SolverNTS ${NTS}TriScoreN.cpp ${NTS}Main.cpp ${TOOLS})
+find_package(Threads)
 add_executable(Solver ../src/Main.cpp ${ALGORITHMS} ${TOOLS})
+target_link_libraries(Solver ${CMAKE_THREAD_LIBS_INIT})
 add_executable(InitInstances ${INITINSTANCES}InstanceGenerator.cpp)
 add_executable(Compute ${COMPUTE}Test.cpp ${TOOLS})

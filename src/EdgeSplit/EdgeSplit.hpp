@@ -2,33 +2,28 @@
 #define EdgeSplit_HPP
 #include "../Components.hpp"
 #include "../TriScore/TriScore.hpp"
-#include <unordered_map>
+
+void affiche(int i1, int i2, int j1, int j2);
+void affiche_A(Tab A);
 
 class ESplit{
     public:
     int size;
     int delta = -1;
     vector<pair<int, int>> E;
-    Tab G; //(size*(size+1)) matrice d'adjacence des sommets + poids sortant stockés sur la dernière colonne
-    Tab A; //(size*(size+1)) stock le poids sortant des sommets en fonction de la taille du système, ainsi que le poids du système
-    Tab W; //(3*size/2 - 2) stock le poids des arêtes
-    unordered_map<unsigned long long, int> M;
-
-    int single = 0;
-    int multiple = 0;
+    CostTab A; //(size*(size+1)) stock le poids sortant des sommets en fonction de la taille du système, ainsi que le poids du système
+    CostTab W; //(3*size/2 - 2) stock le poids des arêtes
+    unordered_map<unsigned long long, Cost> M;
 
     Cost bestCost;
     Tab bestOrder;
     std::chrono::duration<double> time;
-    
 
-    Cost solve(int i1, int i2, int j1, int j2, Tab A);
-    Cost solve_vertical(int i1, int i2, int j1, int j2, unsigned long long key, Tab A);
-    Cost solve_diag(int i1, int i2, int j1, int j2, unsigned long long key, Tab A);
-    Cost solve_U(int i1, int i2, int j1, int j2, int start_z_cost, int end_x_cost, int ofsy, int ofs);
-    Cost solve_D(int i1, int i2, int j1, int j2, int start_x_cost, int end_z_cost, int ofsy, int ofs);
+    Cost solve(int i1, int i2, int j1, int j2, CostTab A);
+    Cost solve_vertical(int i1, int i2, int j1, int j2, unsigned long long key, CostTab A, Cost S_cost);
+    Cost solve_diag(int i1, int i2, int j1, int j2, unsigned long long key, CostTab A, Cost S_cost);
 
-    Cost ext_cost(int i1, int i2, int j1, int j2);
+    void ext_cost(int i1, int i2, int j1, int j2, CostTab A, Cost& s);
 
     unsigned long long convert(int i1, int i2, int j1, int j2);
 
