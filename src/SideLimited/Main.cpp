@@ -20,7 +20,8 @@ int main(int argc, char* argv[]){
                 if(i == argc-1){
                     cerr << "Missing argument : range" << '\n';
                 }
-                solver.delta = atoi(argv[i+1]);
+                solver.refdelta = atoi(argv[i+1]);
+                cout << "real delta" << solver.delta << '\n';
                 i++;
             }else{
                 path = argv[i];
@@ -29,9 +30,9 @@ int main(int argc, char* argv[]){
     }
     if(sf){
         display(path);
-        solver.execfile(path);
+        execfile<SLim>(solver, path);
     }else{
-        solver.execdir(path);
+        execdir<SLim>(solver, path);
     }
     return 0;
 }

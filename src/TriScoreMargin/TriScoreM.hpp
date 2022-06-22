@@ -18,17 +18,12 @@ class SousG{
     void set(Tab G, Tab V){this->G = G; this->V = V;};
 };
 
-class TriScoreM{
+class TriScoreM : public Algorithm{
     public:
     TriScore triscore;
-    int size;
-    int delta;
+
     vector<pair<int, int>> E;
     Tab G;
-
-    Tab bestOrder;
-    Cost bestCost;
-    std::chrono::duration<double> time;
 
     SousG getSG(){SousG sg; sg.set(G, vector<int> (size, -1)); return sg;}
     Cost solve();
@@ -37,8 +32,7 @@ class TriScoreM{
     void display_order();
 
     void init(string file);
-    void execfile(string file);
-    void execdir(string dir);
+    Cost call_solve();
 };
 
 #endif

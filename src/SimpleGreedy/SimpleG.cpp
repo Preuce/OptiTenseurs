@@ -22,7 +22,7 @@ Cost SimpleG::solve(SouG& sg){
             if(cost < C[key] && cost > 0){
                 //mémoïsation
                 C[key] = cost;
-                //O[key] = sgref.S[i];
+                O[key] = sgref.S[i];
                 //mise à jour de SG pour faire remonter G et V
                 sg.G = sg2.G; 
                 sg.V = sg2.V;
@@ -31,7 +31,7 @@ Cost SimpleG::solve(SouG& sg){
     }else if(C.find(key) == C.end()){
         //si il ne reste qu'une arête mais que le coût n'a pas été calculé
         C[key] = contract(sg.S[0], sg);
-        //O[key] = sg.S[0];
+        O[key] = sg.S[0];
     }else{
         //cas où C[key] est déjà calculé, on a quand même besoin de connaître l'état du graphe suite aux contractions
         //on connait l'ensemble des arêtes qui ont été contractées : sg.S
@@ -163,13 +163,15 @@ void SimpleG::display_order(){
 }
 
 void SimpleG::get_order(unsigned long long key){
-    bestOrder.clear();
     int i = O[key];
+
     unsigned long long next = key-pow(2, i);
-    if(next >= 0){
+
+    if(next+1 > 0){
         get_order(next);
         bestOrder.push_back(i);
     }else{
+        bestOrder.clear();
         bestOrder.push_back(i);
     }
 }
@@ -181,7 +183,7 @@ void SimpleG::init(string file){
     C.clear();
     S.clear();
 
-    bestCost = INT32_MAX-1;
+    bestCost = numeric_limits<Cost>::max() - 1;
     bestOrder.clear();
 
     ifstream ifile(file);
@@ -220,43 +222,8 @@ void SimpleG::init(string file){
     sgref = getSG();
 }
 
-void SimpleG::execfile(string file){
-    string path = "../instances/" + file;
-
-    cout << "Starting initialisation on : " << file << '\n';
-    init(path);
-    cout << "End of initialisation" << '\n';
-    //cout << "Starting solving" << endl;
-    auto start = std::chrono::high_resolution_clock::now();
-    bestCost = solve(sgref);
-    auto end = std::chrono::high_resolution_clock::now();
-    time = end-start;
-    cout << "Best cost* : " << bestCost << endl;
-    cout << "Best order : ";
-    //get_order(get_key(S));
-    //display_order();
-    std::cout << std::scientific << "Temps : " << time.count()<< "s" << std::endl;
-    cout << "--------------" << endl;
-}
-
-void SimpleG::execdir(string dir){
-    string base = "../instances/" + dir + "/";
-    DIR* dp = NULL;
-    struct dirent *file = NULL;
-    dp = opendir(base.c_str());
-    if(dp == NULL){
-        cerr << "Could not open directory : " << base << '\n';
-        exit(-1);
-    }
-    file = readdir(dp);
-    
-    while(file != NULL){
-        if(file->d_name[0] != '.'){
-            string path = base + file->d_name;
-            display(path);
-            execfile(path);
-        }
-        file = readdir(dp);
-    }
-    closedir(dp);
+Cost SimpleG::call_solve(){
+    Cost c = solve(sgref);
+    get_order(get_key(S));
+    return c;
 }

@@ -9,7 +9,7 @@ Cost ESplit::solve(int i1, int i2, int j1, int j2, CostTab A){
         //affiche(i1, i2, j1, j2);
         //affiche_A(A);
         //valeur par défaut, facilite les comparaisons
-        M[key] = bestCost+1;
+        M[key] = bestCost+1UL;
         //coupes diagonales
         solve_diag(i1, i2, j1, j2, key, A, S_cost);
         //coupes verticales
@@ -211,7 +211,7 @@ Cost ESplit::solve_vertical(int i1, int i2, int j1, int j2, unsigned long long k
             //arête du bas
             int z = ignored;
 
-            Cost cut = 1;
+            Cost cut = 1UL;
 
             //cas on ne dépasse pas de la ligne i1 i2
             if(i >= i1 && i < i2){
@@ -280,7 +280,7 @@ Cost ESplit::solve_vertical(int i1, int i2, int j1, int j2, unsigned long long k
         }
     }else{
         //cout << i1 << " " << i2 << " " << j1 << " " << j2 << '\n';
-        M[key] = 0;
+        M[key] = 0UL;
     }
     return M[key];
 }
@@ -308,29 +308,25 @@ unsigned long long ESplit::convert(int i1, int i2, int j1, int j2){
     return res;
 }
 
-void ComputeA(int i1, int i2, int j1, int j2, Tab& A){
+/**
+ * @brief dummy method for template
+ * 
+ */
+void ESplit::display_order(){
 
 }
 
 void ESplit::init(string file){
-    Tab G;
-    cout << "Clearing..." << '\n';
-    cout << "A" << '\n';
+    CostTab G;
     A.clear();
-    //cout << "M" << '\n';
     M.clear();
-    cout << "W" << '\n';
     W.clear();
-    cout << "E" << '\n';
     E.clear();
-    cout << "bestOrder" << '\n';
     bestOrder.clear();
-    cout << "Everything's clear" << '\n';
     //get_approx_solution(bestCost, bestOrder, file);
     bestCost = numeric_limits<short>::max() - 1;
     M[0xFFFFFFFFFFFFFFFF] = bestCost;
 
-    cout << "Starting import" << '\n';
     ifstream ifile(file);
     string line;
     int i, j, w;
@@ -340,10 +336,10 @@ void ESplit::init(string file){
             case 'p':
                 size = atoi(&line[2]);
                 D = size/2;
-                if(delta <= 0){
+                if(refdelta <= 0){
                     delta = D;
                 }else{
-                    delta = min(delta, D);
+                    delta = min(refdelta, D);
                 }
                 A.resize(size+1, 1);
                 G.resize(size*size, 1);
@@ -358,51 +354,15 @@ void ESplit::init(string file){
             break;
         }
     }
-    cout << "G and E initialized" << '\n';
-    cout << "Sorting E..." << '\n';
     sort_edges(E);
     for(auto& p : E){
         W.push_back(G[size*p.first + p.second]);
     }
-    cout << "E sorted" << '\n';
     //petite manip pour éviter des segfault
-    cout << "Filling for segfault" << '\n';
     E.push_back(make_pair(size, size));
-    W.push_back(1);
-    cout << "End of fill" << '\n';
+    W.push_back(1UL);
 }
 
-void ESplit::execfile(string file){
-    string path = "../instances/" + file;
-    cout << "Start of initialisation" << '\n';
-    init(path);
-    cout << "Initialisation ended" << "\n";
-    auto start = std::chrono::high_resolution_clock::now();
-    cout << "Start of solving" << '\n';
-    bestCost = solve(0, D-1, 0, D-1, CostTab (size+1, 1));
-    cout << "Solving ended" << '\n';
-    cout << "Cost : " << bestCost << '\n';
-    auto end = std::chrono::high_resolution_clock::now();
-    time = end-start;
-    std::cout << std::scientific << "Temps : " << time.count()<< "s" << '\n';
-    cout << "--------------" << endl;
-}
-
-void ESplit::execdir(string dir){
-    string base = "../instances/" + dir + "/";
-    DIR* dp = NULL;
-    struct dirent *file = NULL;
-    dp = opendir(base.c_str());
-    
-    file = readdir(dp);
-    
-    while(file != NULL){
-        if(file->d_name[0] != '.'){
-            string path = base + file->d_name;
-            display(path.c_str()); //On verra plus tard pour modifier display() et les autres méthodes
-            execfile(path);
-        }
-        file = readdir(dp);
-    }
-    closedir(dp);
+Cost ESplit::call_solve(){
+    return solve(0, D-1, 0, D-1, CostTab (size+1, 1));
 }

@@ -1,2 +1,2 @@
-f trial/instance_6_8.txt
-o 6 9 3 0 7 8 5 4 2 1
+f test/test1.txt
+o 5 4 6 0 3 2 1

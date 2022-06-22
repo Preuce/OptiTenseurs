@@ -18,10 +18,8 @@ class SouG{
     void set(Tab S, Tab G, Tab V){this->S = S; this->G = G; this->V = V;};
 };
 
-class SimpleG{
+class SimpleG : public Algorithm{
     public:
-
-    int size;
     SouG sgref;
     vector<pair<int, int>> E; //liste des arêtes (fixe)
     Tab G; //size*(size+1)
@@ -30,10 +28,6 @@ class SimpleG{
     //Tab C;
     unordered_map<unsigned long long, int> O;
     unordered_map<unsigned long long, Cost> C;
-
-    Cost bestCost;
-    Tab bestOrder;
-    std::chrono::duration<double> time;
 
     SouG getSG(){SouG sg; sg.set(S, G, vector<int> (size, -1)); return sg;}
     Cost contract(int i, SouG& sg);
@@ -48,8 +42,6 @@ class SimpleG{
     void get_order(unsigned long long key);
 
     void init(string file);
-
-    void execfile(string file);
-    void execdir(string dir);
+    Cost call_solve();
 };
 #endif

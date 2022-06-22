@@ -113,7 +113,7 @@ void TriScoreM::init(string file){
             case 'p':
                 size = atoi(&line[2]);
                 G.resize(size*size, 1);
-                delta = min(max(delta, 1), 3*size/2 - 2);
+                delta = min(max(refdelta, 1), 3*size/2 - 2);
             break;
             case 'e':
                 flux >> i >> j >> w;
@@ -136,43 +136,6 @@ void TriScoreM::init(string file){
     sort_edges(E);
 }
 
-void TriScoreM::execfile(string file){
-    string path = "../instances/" + file;
-    //cout << "Starting initialisation on : " << file << endl;
-    init(path);
-    //cout << "End of initialisation" << endl;
-    //cout << "Starting solving" << endl;
-    cout << "Delta : " << delta << '\n';
-    auto start = std::chrono::high_resolution_clock::now();
-    bestCost = solve();
-    cout << "Best cost : " << bestCost << '\n';
-    auto end = std::chrono::high_resolution_clock::now();
-    time = end-start;
-    cout << "Best order : ";
-    display_order();
-    std::cout << std::scientific << "Temps : " << time.count()<< "s" << std::endl;
-    cout << "--------------" << endl;
-    delta = -1;
-}
-
-void TriScoreM::execdir(string dir){
-    string base = "../instances/" + dir + "/";
-    DIR* dp = NULL;
-    struct dirent *file = NULL;
-    dp = opendir(base.c_str());
-    if(dp == NULL){
-        cerr << "Could not open directory : " << base << '\n';
-        exit(-1);
-    }
-    file = readdir(dp);
-    
-    while(file != NULL){
-        if(file->d_name[0] != '.'){
-            string path = base + file->d_name;
-            display(path);
-            execfile(path);
-        }
-        file = readdir(dp);
-    }
-    closedir(dp);
+Cost TriScoreM::call_solve(){
+    return solve();
 }

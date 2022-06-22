@@ -235,15 +235,17 @@ void SLim::init(string file){
         switch(line[0]){
             case 'p':
                 size = atoi(&line[2]);
-                if(delta <= 0){ //on pourrait mettre une inégalité stricte, celà impliquerait qu'on s'interdit de garder l'arête centrale, mais nécessiterait de modifier la boucle principal
+                if(refdelta <= 0){ //on pourrait mettre une inégalité stricte, celà impliquerait qu'on s'interdit de garder l'arête centrale, mais nécessiterait de modifier la boucle principal
                     delta = size/2; //pk tu casses
+                }else{
+                    delta = min(refdelta, size/2);
                 }
                 kmax = 2*delta+1;
                 G.resize(size*(size+1), 1);
                 A.resize(size, 1);
                 P.resize(size, -1);
-                C.resize(min(2*(size/2)-1, kmax), 0); //tableau des coûts, //pk je peux pas adapter sa taille à delta :c
-                T.resize(min(2*(size/2)-1, kmax), 1); //tableau des t  //et lui non plus :c
+                C.resize(min(2*(size/2)-1, kmax), 0); //tableau des coûts
+                T.resize(min(2*(size/2)-1, kmax), 1); //tableau des arêtes centrales
                 O.resize(size*size/4, {-1, -1});
                 Z.resize(size/2, -1);
             break;
@@ -262,45 +264,9 @@ void SLim::init(string file){
     }
 }
 
-void SLim::execfile(string file){
-    string path = "../instances/" + file;
-    //cout << "Starting initialisation on : " << file << endl;
-    init(path);
-    //cout << "End of initialisation" << endl;
-    //cout << "Starting solving" << endl;
-    cout << "Delta : " << delta << '\n';
-    auto start = std::chrono::high_resolution_clock::now();
-    bestCost = solve();
-    auto end = std::chrono::high_resolution_clock::now();
-    time = end-start;
-    cout << "Best cost : " << bestCost << '\n';
-    get_order(size/2-2, Z[size/2-1]);    
+Cost SLim::call_solve(){
+    Cost c = solve();
+    get_order(size/2-2, Z[size/2-1]);
     bestOrder.push_back(size-2);
-    cout << "Best order : ";
-    display_order();
-    std::cout << std::scientific << "Temps : " << time.count()<< "s" << '\n';
-    cout << "--------------" << endl;
-    delta = -1;
-}
-
-void SLim::execdir(string dir){
-    string base = "../instances/" + dir = "/";
-    DIR* dp = NULL;
-    struct dirent *file = NULL;
-    dp = opendir(base.c_str());
-    if(dp == NULL){
-        cerr << "Could not open directory : " << base << '\n';
-        exit(-1);
-    }
-    file = readdir(dp);
-    
-    while(file != NULL){
-        if(file->d_name[0] != '.'){
-            string path = base = file->d_name;
-            display(path);
-            execfile(path);
-        }
-        file = readdir(dp);
-    }
-    closedir(dp);
+    return c;
 }

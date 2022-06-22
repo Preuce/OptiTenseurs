@@ -13,6 +13,8 @@
 #include <thread>
 #include <unistd.h>
 #include <condition_variable>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 using namespace chrono_literals;
 
@@ -30,44 +32,85 @@ NTS nts;
 ofstream result_file("../results/results.txt");
 ofstream cost_file("../results/cost.csv");
 ofstream time_file("../results/time.csv");
+string separator(" ");
 string instance_dir;
 string instance_file;
 
-template<typename T>
-void execfile(T& solver)
-{
-    condition_variable cv;
-    mutex mtx;
+void add_separator(){
+    cost_file << separator << flush;
+    time_file << separator << flush;
+}
 
-    /*pid_t idt;
-    bool wait = true;
-    int loop = 0;*/
-
-    std::thread t1([/*&idt, &wait, */&solver, &cv](){
-        //idt = gettid();
-        solver.execfile(instance_file);
-        cv.notify_all();
-        //wait = false;
-    });
-    pthread_t tid = t1.native_handle();
-    t1.detach();
-    /*while(wait && loop < 40){
-        this_thread::sleep_for(100ms);
-        loop++;
+template<class T>
+void export_header(T& solver){
+    cout << "--- "<< typeid(solver).name() <<" ---" << '\n';
+    result_file << "--- " << typeid(solver).name() << " ---" << '\n';
+    if(solver.delta != -1){
+        result_file << "Delta : " << solver.delta << '\n'; 
     }
-    kill(idt, SIGCONT);*/
-    std::unique_lock<std::mutex> lock(mtx);
-    auto status = cv.wait_for(lock, 1s);
+}
 
-    // si timeout il y a, on tue le thread
-    if (status == std::cv_status::timeout) {
-        pthread_cancel(tid);
+template<class T>
+void export_results(T& solver){
+    result_file << "Best cost : " << solver.bestCost << '\n';
+    result_file << "Time : " << solver.time.count() << endl;
+
+    cost_file << solver.bestCost;
+    time_file << solver.time.count();
+    add_separator();
+}
+
+template<class T>
+void launch_exec(T& solver, int delta = -1){
+    int* status;
+    pid_t pid = fork();
+    if(pid == 0){ //processus fils
+        condition_variable cv;
+        mutex mtx;
+
+        std::thread t1([&solver, &cv, &delta](){
+            solver.refdelta = delta;
+            export_header<T>(solver);
+            //Template défini dans components, permettant d'initialiser l'algorithme et de résoudre l'instance
+            execfile<T>(solver, instance_file);
+            
+            cv.notify_all();
+        });
+
+        pthread_t tid = t1.native_handle();
+        t1.detach();
+
+        //un mutex lock le thread "principal" tant que l'autre n'a pas fini (ou jusqu'à la fin du délai)
+        std::unique_lock<std::mutex> lock(mtx);
+        auto status = cv.wait_for(lock, 1s);
+
+        // si timeout il y a, on tue le thread
+        if (status == std::cv_status::timeout) {
+            pthread_cancel(tid);
+            solver.bestCost = -1;
+        }
+        export_results<T>(solver);
+        exit(-1);
+
+    }else{ //processus parent
+        wait(status);
     }
 }
 
 void init_csv(){
     /*size, Split, VSplit, EdgeSplit, SideIter, SideLim, SimpleG, TriScore*/
-    string header = "size, Matrix, Split, VSplit, EdgeSplit, SideIter, SideLim, SimpleG, TriScore \n";
+    string header = "size" + separator + 
+    "Matrix" + separator + 
+    "Split" + separator + 
+    "VSplit" + separator + 
+    "EdgeSplit" + separator + 
+    "SideIter" + separator + 
+    "SideLim" + separator + 
+    "SimpleG" + separator +
+    "TriScore" + separator +
+    "TriScoreMargin" + separator +
+    "TriScoreNaive"
+    + '\n';
     cost_file << header;
     time_file << header;
 }
@@ -86,8 +129,9 @@ void get_size(){
      while(getline(input_file, line)){
         if(line.size() > 2){
             if(line[0] == 'p'){
-                cost_file << &line[2] << ", ";
-                time_file << &line[2] << ", ";
+                cost_file << &line[2];
+                time_file << &line[2];
+                add_separator();
                 break;
             }
         }
@@ -150,148 +194,29 @@ void export_order(Tab O){
     result_file << '\n';
 }
 
-void export_matrix(){
-    cout << "--- Matrix ---" << '\n';
-    result_file << "--- Matrix ---" << '\n';
-    execfile(matrix);
-    result_file << "Best cost* : " << matrix.bestCost << '\n'; 
-    result_file << "Time : " << matrix.time.count() <<endl;
-
-    cost_file << matrix.bestCost << ", ";
-    time_file << matrix.time.count() << ", ";
-}
-
-void export_split(){
-    cout << "--- Split ---" << '\n'; 
-    result_file << "--- Split ---" << '\n';
-    execfile(split);
-    result_file << "Best cost* : " << split.bestCost << '\n';
-    result_file << "Time : " << split.time.count() << endl;
-
-    cost_file << split.bestCost << ", ";
-    time_file << split.time.count() << ", ";
-}
-
-void export_esplit(){
-    cout << "--- EdgeSplit ---" << '\n'; 
-    result_file << "--- EdgeSplit ---" << '\n';
-    execfile(esplit);
-    result_file << "Best cost* : " << esplit.bestCost << '\n';
-    result_file << "Time : " << esplit.time.count() << endl;
-
-    cost_file << esplit.bestCost << ", ";
-    time_file << esplit.time.count() << ", ";
-}
-
-void export_simpleg(){
-    cout << "--- SimpleGreedy ---" << '\n';
-    result_file << "--- SimpleGreedy ---" << '\n';
-    execfile(simpleg);
-    result_file << "Best cost* : " << simpleg.bestCost << '\n';
-    export_order(simpleg.bestOrder);
-    result_file << "Time : " << simpleg.time.count() << endl;
-
-    cost_file << simpleg.bestCost << ", ";
-    time_file << simpleg.time.count() << ", ";
-}
-
-void export_vsplit(){
-    cout << "--- VSplit ---" << '\n';
-    result_file << "--- VSplit ---" << '\n';
-    splitrange.delta = 3;
-    result_file << "Delta : " << splitrange.delta << '\n'; 
-    execfile(splitrange);
-    result_file << "Best cost : " << splitrange.bestCost << '\n';
-    result_file << "Time : " << splitrange.time.count() << endl;
-
-    cost_file << splitrange.bestCost << ", ";
-    time_file << splitrange.time.count() << ", ";
-}
-
-void export_sideiter(){
-    cout << "--- SideIter ---" << '\n';
-    result_file << "--- SideIter ---" << '\n';
-    execfile(sideiter);
-    result_file << "Best cost : " << sideiter.bestCost << '\n';
-    export_order(sideiter.bestOrder);
-    result_file << "Time : " << sideiter.time.count() << endl;
-
-    cost_file << sideiter.bestCost << ", ";
-    time_file << sideiter.time.count() << ", ";
-}
-
-void export_sidelim(){
-    cout << "--- SideLimited ---" << '\n';
-    result_file << "--- SideLimited ---" << '\n';
-    sidelim.delta = 3;
-    result_file << "Delta : " << sidelim.delta << '\n';
-    execfile(sidelim);
-    result_file << "Best cost : " << sidelim.bestCost << '\n';
-    export_order(sideiter.bestOrder);
-    result_file << "Time : " << sidelim.time.count() << endl;
-
-    cost_file << sidelim.bestCost << ", ";
-    time_file << sidelim.time.count() << ", ";
-}
-
-void export_triscore(){
-    cout << "--- TriScore ---" << '\n';
-    result_file << "--- TriScore ---" << '\n';
-    execfile(triscore);
-    result_file << "Best cost : " << triscore.bestCost << '\n';
-    export_order(triscore.bestOrder);
-    result_file << "Time : " << triscore.time.count() << endl;
-
-    cost_file << triscore.bestCost << endl;
-    time_file << triscore.time.count() << endl;
-}
-
-void export_mts(){
-    cout << "--- TriScoreMargin ---" << '\n';
-    result_file << "--- TriScoreMargin ---" << '\n';
-    mts.delta = 3;
-    execfile(mts);
-    result_file << "Delta : " << mts.delta << '\n'; 
-    result_file << "Best cost : " << mts.bestCost << '\n';
-    export_order(mts.bestOrder);
-    result_file << "Time : " << mts.time.count() << endl;
-}
-
-void export_nts(){
-    cout << "--- TriScoreNaive ---" << '\n';
-    result_file << "--- TriScoreNaive ---" << '\n';
-    execfile(nts);
-    result_file << "Best cost : " << nts.bestCost << '\n';
-    export_order(nts.bestOrder);
-    result_file << "Time : " << nts.time.count() << endl;
-}
-
-void execfile(){
+void init(){
     result_file << instance_file << '\n';
     display(instance_file);
     export_display();
-
     get_size();
+}
 
-    //export_matrix(); //seems ok
+void execfile_on_all(){
+    init();
     
-    //export_split();
+    launch_exec(matrix);
+    launch_exec(split);
+    launch_exec(splitrange, 3);
+    launch_exec(esplit);
+    launch_exec(sideiter);
+    launch_exec(sidelim, 3);
+    launch_exec(simpleg);
+    launch_exec(triscore);
+    launch_exec(mts, 10);
+    launch_exec(nts);
 
-    //export_vsplit();
-
-    //export_esplit();
-
-    //export_sideiter();
-
-    //export_sidelim();
-
-    export_simpleg();
-
-    //export_triscore();
-
-    //export_mts();
-
-    //export_nts();
+    cost_file << endl;
+    time_file << endl;
     result_file << "----------" << "\n\n";
 }
 
@@ -310,7 +235,7 @@ void execdir(){
     while(file != NULL){
         if(file->d_name[0] != '.'){
             instance_file = directory + file->d_name;
-            execfile();
+            execfile_on_all();
         }
         file = readdir(dp);
     }
@@ -334,7 +259,7 @@ int main(int argc, char* argv[]){
             cout << "The root directory's name is 'instances'" << '\n';
         }else{
             instance_file = argv[1];
-            execfile();
+            execfile_on_all();
         }
         break;
     case 3:
