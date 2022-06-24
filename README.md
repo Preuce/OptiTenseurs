@@ -7,6 +7,7 @@ The goal of this project is to implement algorithms capable of finding the best 
 * the 'tools' directory contains quality-of-life programs such as the code that displays a TT, the code to test contraction orders, and the code to generate instances
 * the 'build' directory contains a CMakeLists that can compile everything
 * the 'result' directory contains all results of of the main Solver's execution, including 2 csv files and a general r
+* the 'plot' directory contains a python notebook with a piece of code to plot any cost or time csv
 
 # Compiling
 When in the 'build' directory, use 'cmake .' to set up the compiler, then 'make' followed by the name of the program (or none to compile everything). Here are the programs you can build :
@@ -34,7 +35,7 @@ They are formatted in the following way :
 # Generating instances
 Instances can be generated using ./InitInstances while in the 'build' directory.  
 The parameters are the following :
-* 'd directory' defines the path ('instances/' is considered as the root directory, default : test/instance)
+* 'd path' defines the path ('instances/' is considered as the root directory, default : test/instance)
 * 'n number' the amount of instances to generate (default : 1)
 * 's number' the size of the TT to generate (default : 6)
 * 'm number' the minimum weight present in the TT (default : 1)
