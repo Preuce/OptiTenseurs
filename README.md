@@ -58,4 +58,15 @@ Instances are sorted by name, make sure they each contain a number, and are sort
 
 # Results
 The result of the execution of ./Solver can be found in the 'results' directory, 'results.txt' contains a general recap of the execution. Can be seen : the time, best cost and (if available) the best order for each algorithm.
-'cost.csv' contains every costs, 'time.csv' contains every time.
+'cost.csv' contains every costs, 'time.csv' contains every time.  
+
+# Notations
+* size : the size of the instance
+* G is an adjacence matrix, G[i*size+j] gives the weight of the edge between the tensors i and j. G is usually of size (size*size) but can sometime have an extra column indicating the total weight of each tensors at an individual scale
+* A is a list (sometime a list of lists) indicating the total weight of each tensors, considering that they may already be part of a greater tensor-network
+* C stores the cost of every order, its type may change depending on the way the contraction orders are encoded, but it usually is either a list or an unordered_map
+* S usually indicates a list of tensor, or a list of edge, but it almost always is the list we are iterating on
+* P or O usually stores contraction orders, though getting it requires to use a dedicated fonction
+* The 'Cost' type is int, but it could be changed to avoid overflows
+* The 'CostTab' type is vector<Cost>
+* The 'Tab' type is vector<int>
