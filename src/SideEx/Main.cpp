@@ -1,7 +1,7 @@
-#include "SideLimSolver.hpp"
+#include "SideExSolver.hpp"
 
 int main(int argc, char* argv[]){
-    SLim solver;
+    SideEx solver;
     const char* path;
     bool sf = true;
 
@@ -21,7 +21,6 @@ int main(int argc, char* argv[]){
                     cerr << "Missing argument : range" << '\n';
                 }
                 solver.refdelta = atoi(argv[i+1]);
-                cout << "real delta" << solver.delta << '\n';
                 i++;
             }else{
                 path = argv[i];
@@ -30,9 +29,9 @@ int main(int argc, char* argv[]){
     }
     if(sf){
         display(path);
-        execfile<SLim>(solver, path);
+        execfile(solver, path);
     }else{
-        execdir<SLim>(solver, path);
+        execdir(solver, path);
     }
     return 0;
 }

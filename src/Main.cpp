@@ -1,55 +1,55 @@
-#include "Matrice/MatrixSolver.hpp"
-#include "VerticalSplit/VerticalSplitSolver.hpp"
-#include "SideIter/SideExSolver.hpp"
-#include "SideLimited/SideLimSolver.hpp"
-#include "Split/SplitSolver.hpp"
-#include "EdgeSplit/EdgeSplit.hpp"
-#include "TriScore/TriScore.hpp"
-#include "TriScoreMargin/TriScoreM.hpp"
-#include "TriScoreNaive/TriScoreN.hpp"
-#include "SimpleGreedy/SimpleG.hpp"
-#include <signal.h>
-#include <chrono>
-#include <thread>
-#include <unistd.h>
-#include <condition_variable>
-#include <sys/types.h>
-#include <sys/wait.h>
+#include "Main.hpp"
 
-using namespace chrono_literals;
+void init_algos(){
+    algos.push_back(new MatrixSolver());
+    algos.push_back(new Split());
+    algos.push_back(new VSplit());
+    algos.push_back(new ESplit());
+    algos.push_back(new SideEx());
+    algos.push_back(new SimpleG());
+    algos.push_back(new TriScore());
+    algos.push_back(new TriScoreM());
+    algos.push_back(new NTS());
+}
 
-MatrixSolver matrix;
-SplitRange splitrange;
-SimpleG simpleg;
-SideIter sideiter;
-SLim sidelim;
-Split split;
-ESplit esplit;
-TriScore triscore;
-TriScoreM mts;
-NTS nts;
-
-ofstream result_file("../results/results.txt");
-ofstream cost_file("../results/cost.csv");
-ofstream time_file("../results/time.csv");
-string separator(" ");
-string instance_dir;
-string instance_file;
-
+/**
+ * @brief adds 'separator' to cost_file and time_file
+ * 
+ */
 void add_separator(){
     cost_file << separator << flush;
     time_file << separator << flush;
 }
 
+void add_error_values(){
+    cost_file << -1 << separator << flush;
+    time_file << 0.0 << separator << flush;
+}
+/**
+ * @brief exports solver's name into result_file
+ * 
+ * @tparam T the solver's type
+ * @param solver 
+ */
 template<class T>
 void export_header(T& solver){
-    cout << "--- "<< typeid(solver).name() <<" ---" << '\n';
-    result_file << "--- " << typeid(solver).name() << " ---" << '\n';
+    string class_name = typeid(solver).name();
+    do{
+        class_name.erase(class_name.begin());
+    }while(isdigit(class_name[0]));
+    cout << "--- "<< class_name <<" ---" << '\n';
+    result_file << "--- " << class_name << " ---" << '\n';
     if(solver.delta != -1){
         result_file << "Delta : " << solver.delta << '\n'; 
     }
 }
 
+/**
+ * @brief exports results into the different files
+ * 
+ * @tparam T the solver's type
+ * @param solver 
+ */
 template<class T>
 void export_results(T& solver){
     result_file << "Best cost : " << solver.bestCost << '\n';
@@ -60,20 +60,27 @@ void export_results(T& solver){
     add_separator();
 }
 
+/**
+ * @brief executes solver.execfile inside a thread, and stops it after the time limit is reached 
+ * 
+ * @tparam T 
+ * @param solver 
+ * @param delta affects the behaviour of some heuristics
+ */
 template<class T>
-void launch_exec(T& solver, int delta = -1){
-    int* status;
+void launch_exec(T& solver, int delta){
+    int status;
     pid_t pid = fork();
     if(pid == 0){ //processus fils
         condition_variable cv;
         mutex mtx;
 
         std::thread t1([&solver, &cv, &delta](){
-            solver.refdelta = delta;
-            export_header<T>(solver);
+            solver->refdelta = delta;
+            export_header(*solver);
             //Template défini dans components, permettant d'initialiser l'algorithme et de résoudre l'instance
-            execfile<T>(solver, instance_file);
-            
+            execfile(*solver, instance_file);
+            export_results(*solver);
             cv.notify_all();
         });
 
@@ -82,30 +89,44 @@ void launch_exec(T& solver, int delta = -1){
 
         //un mutex lock le thread "principal" tant que l'autre n'a pas fini (ou jusqu'à la fin du délai)
         std::unique_lock<std::mutex> lock(mtx);
-        auto status = cv.wait_for(lock, 1s);
+        auto status = cv.wait_for(lock, WAIT_TIME);
 
         // si timeout il y a, on tue le thread
         if (status == std::cv_status::timeout) {
             pthread_cancel(tid);
-            solver.bestCost = -1;
+            solver->bestCost = -1;
+            export_results(*solver);
+            exit(-1);
         }
-        export_results<T>(solver);
-        exit(-1);
+        
+        exit(0);
 
     }else{ //processus parent
-        wait(status);
+        wait(&status);
+        if(status!=0){ //si timeout
+            solver->still_up = false;
+            //add_error_values();
+        }
     }
 }
 
+/**
+ * @brief initializes .csv's header
+ * 
+ */
 void init_csv(){
-    /*size, Split, VSplit, EdgeSplit, SideIter, SideLim, SimpleG, TriScore*/
+    /*size, Matrix, Split, VSplit, EdgeSplit, SideEx, SimpleG, TriScore, MTS, NTS*/
+    /*for(auto algo = algos.begin(); algo != algos.end(); algo++){
+        cout << "in" << '\n';
+        launch_exec(*algo);
+
+    }*/
     string header = "size" + separator + 
     "Matrix" + separator + 
     "Split" + separator + 
     "VSplit" + separator + 
-    "EdgeSplit" + separator + 
-    "SideIter" + separator + 
-    "SideLim" + separator + 
+    "EdgeSplit" + separator +
+    "SideEx" + separator + 
     "SimpleG" + separator +
     "TriScore" + separator +
     "TriScoreMargin" + separator +
@@ -115,6 +136,10 @@ void init_csv(){
     time_file << header;
 }
 
+/**
+ * @brief puts the size of instances into the .csv
+ * 
+ */
 void get_size(){
     string path = "../instances/" + instance_file;
     string filename(path);
@@ -129,6 +154,10 @@ void get_size(){
      while(getline(input_file, line)){
         if(line.size() > 2){
             if(line[0] == 'p'){
+                /*cost_file << inst_num;
+                time_file << inst_num;
+                add_separator();
+                inst_num++;*/
                 cost_file << &line[2];
                 time_file << &line[2];
                 add_separator();
@@ -139,6 +168,10 @@ void get_size(){
 
 }
 
+/**
+ * @brief output the display into result_file
+ * 
+ */
 void export_display(){
     string path = "../instances/" + instance_file;
     string filename(path);
@@ -186,6 +219,11 @@ void export_display(){
     result_file << '\n';
 }
 
+/**
+ * @brief exports a contraction order into result_file
+ * 
+ * @param O a vector<int> representing a series of edges
+ */
 void export_order(Tab O){
     result_file << "Best order : ";
     for(int i : O){
@@ -194,34 +232,59 @@ void export_order(Tab O){
     result_file << '\n';
 }
 
-void init(){
+/**
+ * @brief initializes various files
+ * 
+ */
+void init_files(){
     result_file << instance_file << '\n';
     display(instance_file);
     export_display();
     get_size();
 }
 
+/**
+ * @brief main method, executes every algorithm defined inside on instance_file
+ * 
+ */
 void execfile_on_all(){
-    init();
+    init_files();
     
-    launch_exec(matrix);
+    for(auto algo = algos.begin(); algo != algos.end(); algo++){
+        cout << typeid((*algo)).name() << '\n';
+        cout << (*algo)->still_up << '\n';
+        if((*algo)->still_up){
+            cout << "in exec" << '\n';
+            launch_exec(*algo);
+        }else{
+            cout << "in trash" << '\n';
+            //cost_file << "-1";
+            //time_file << "0" + separator;
+            add_error_values();
+        }
+    }
+    /*launch_exec(matrix);
     launch_exec(split);
-    launch_exec(splitrange, 3);
+    launch_exec(vsplit, 3);
     launch_exec(esplit);
-    launch_exec(sideiter);
-    launch_exec(sidelim, 3);
+    launch_exec(sideex);
     launch_exec(simpleg);
     launch_exec(triscore);
-    launch_exec(mts, 10);
-    launch_exec(nts);
+    launch_exec(mts, 3);
+    launch_exec(nts);*/
 
     cost_file << endl;
     time_file << endl;
     result_file << "----------" << "\n\n";
 }
 
-void execdir(){
-    init_csv();
+/**
+ * @brief sorts every file in instance_dir
+ * 
+ * @return vector<string> 
+ */
+vector<string> sort_files(){
+    vector<string> file_list;
     string directory = "../instances/" + instance_dir + "/";
     DIR* dp = NULL;
     struct dirent *file = NULL;
@@ -234,12 +297,29 @@ void execdir(){
     
     while(file != NULL){
         if(file->d_name[0] != '.'){
-            instance_file = directory + file->d_name;
-            execfile_on_all();
+            //instance_file = directory + file->d_name;
+            //execfile_on_all();
+            file_list.push_back(directory + file->d_name);
         }
         file = readdir(dp);
     }
     closedir(dp);
+    //un sort pour ordonner les instances (marche que si elles contiennent un indice)
+    sort(file_list.begin(), file_list.end(), [](const string& x, const string& y){
+            return x.length() < y.length() || (x.length() == y.length() && x < y);
+        });
+    return file_list;
+}
+
+/**
+ * @brief iterates through every instances in instance_dir
+ * 
+ */
+void execdir(){
+    for(auto& n : sort_files()){
+        instance_file = n;
+        execfile_on_all();
+    }
 }
 
 int main(int argc, char* argv[]){
@@ -259,12 +339,16 @@ int main(int argc, char* argv[]){
             cout << "The root directory's name is 'instances'" << '\n';
         }else{
             instance_file = argv[1];
+            init_algos();
+            init_csv();
             execfile_on_all();
         }
         break;
     case 3:
         if(argv[1] == string("d")){
             instance_dir = argv[2];
+            init_algos();
+            init_csv();
             execdir();
         }else if(argv[1] == string("vd")){
             display_dir(argv[2]);

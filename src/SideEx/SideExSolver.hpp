@@ -6,7 +6,7 @@
  * @brief Version optimisée de SideIter, n'autorisant pas l'accumulation de plus de DELTA arêtes centrales
  * Peu viable lorsque les arêtes centrales sont de faible dimension 
  */
-class SLim : public Algorithm{
+class SideEx : public Algorithm{
     public:
     //(on rappelle que D = size/2)
     Tab A; //poids sortant (taille size);

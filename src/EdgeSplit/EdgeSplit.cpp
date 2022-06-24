@@ -14,12 +14,22 @@ Cost ESplit::solve(int i1, int i2, int j1, int j2, CostTab A){
         solve_diag(i1, i2, j1, j2, key, A, S_cost);
         //coupes verticales
         solve_vertical(i1, i2, j1, j2,key, A, S_cost);
-        
-        //M[key] = 1;
     }
     return M[key];
 }
 
+/**
+ * @brief iterates over all diagonal cuts int the shape
+ * 
+ * @param i1 
+ * @param i2 
+ * @param j1 
+ * @param j2 
+ * @param key the key of the shape
+ * @param A 
+ * @param S_cost the outer-cost of the shape
+ * @return Cost 
+ */
 Cost ESplit::solve_diag(int i1, int i2, int j1, int j2, unsigned long long key, CostTab A, Cost S_cost){
     //les blocs sont un peu difficiles à gérer, mais n'ont pas de découpe illégale en soit
     //il faut borner le sous-bloc pour éviter de couper les branches
@@ -43,13 +53,13 @@ Cost ESplit::solve_diag(int i1, int i2, int j1, int j2, unsigned long long key, 
         //si elles le sont, on les prend en compte dans le coût de séparation
 
         //upward left piece
-        int ula1=i1, ula2 /**/, ulb1=j1, ulb2=ofsy-1;
+        int ula1=i1, ula2, ulb1=j1, ulb2=ofsy-1;
         //upward right piece
-        int ura1, ura2=i2, urb1=j2 /**/, urb2=j2;
+        int ura1, ura2=i2, urb1=j2, urb2=j2;
         //downward left piece
-        int dla1=i1, dla2=ofsy-1, dlb1=j1, dlb2 /**/;
+        int dla1=i1, dla2=ofsy-1, dlb1=j1, dlb2;
         //downward right piece
-        int dra1=i2 /**/, dra2=i2, drb1, drb2=j2;
+        int dra1=i2, dra2=i2, drb1, drb2=j2;
 
         //on ne les considère que si elles sont légales
         if(ofsy == start){
@@ -60,7 +70,7 @@ Cost ESplit::solve_diag(int i1, int i2, int j1, int j2, unsigned long long key, 
 
             dra1 = i1;
             urb1 = j1;
-            //vraies valeurs de coût et d'arête
+
             cx = ignored;
             cz = ignored;
         }
@@ -71,6 +81,7 @@ Cost ESplit::solve_diag(int i1, int i2, int j1, int j2, unsigned long long key, 
         //on itère à nouveau sur les arêtes centrales, en se limitant aux DELTA-1 suivantes
         for(int ofs = ofsy; (ofs-ofsy+1 <= delta) && ofs <= end; ofs ++){
             
+            //extrémités dépendantes de ofs
             ura1 = ofs+1;
             drb1 = ofs+1;
             
@@ -127,15 +138,11 @@ Cost ESplit::solve_diag(int i1, int i2, int j1, int j2, unsigned long long key, 
                 }
             
                 //on ne rentre que si le coût jusqu'à présent est inférieur au meilleur coût trouvé pour cet ensemble
-                //if(total + cut < M[key])
+                if(total < M[key])
                 {//partie droite 
                     total += solve(ura1, ura2, urb1, urb2, A_copy);
                     if(total < M[key] && total > 0){
                         M[key] = total;
-                        /*if(key==0x0000100010001){
-                            cout << "Nouvelle valeur : " << M[key] << "\n\n";
-                            cout << "Donnée par : " << '\n' << hex << convert(ula1, ula2, ulb1, ulb2) << '\n' << convert(ura1, ura2, urb1, urb2) << "\n\n";
-                        }*/
                     }
                 }
             }
@@ -161,23 +168,12 @@ Cost ESplit::solve_diag(int i1, int i2, int j1, int j2, unsigned long long key, 
                 }
 
                 //on ne rentre que si le coût jusqu'à présent est inférieur au meilleur coût trouvé pour cet ensemble
-                //if(total + cut < M[key])
+                if(total < M[key])
                 {//partie droite
-                    /*if(convert(dra1, dra2, drb1, drb2) == 0x1FFFFFFFF){
-                        cout << "Total1 : " << total << "\n";
-                    }*/
                     total += solve(dra1, dra2, drb1, drb2, A_copy);
-                    /*if(convert(dra1, dra2, drb1, drb2) == 0x1FFFFFFFF){
-                        cout << "Total2 : " << total << "\n\n";
-                    }*/
 
-                    //TODO: condition sur le coût et mémoïsation
                     if(total < M[key] && total > 0){
                         M[key] = total;
-                        /*if(key==0x0000100010001){
-                            cout << "Nouvelle valeur : " << M[key] << "\n";
-                            cout << "Donnée par : " << '\n' << hex << convert(dla1, dla2, dlb1, dlb2) << '\n' << convert(dra1, dra2, drb1, drb2) << dec << "\n\n";
-                        }*/
                     }
                 }
             }
@@ -186,17 +182,18 @@ Cost ESplit::solve_diag(int i1, int i2, int j1, int j2, unsigned long long key, 
     return M[key];
 }
 
-void affiche(int i1, int i2, int j1, int j2){
-    cout << i1 << " " << i2 << '\n' << j1 << " " << j2 << "\n\n";
-}
-
-void affiche_A(Tab A){
-    for(int i = 0; i < A.size(); i++){
-        cout << i << " : " << A[i] << '\n';
-    }
-    cout << '\n';
-}
-
+/**
+ * @brief iterates over all vertical cuts in the shape
+ * 
+ * @param i1 
+ * @param i2 
+ * @param j1 
+ * @param j2 
+ * @param key the key of the shape
+ * @param A 
+ * @param S_cost the outer-cost of the shape
+ * @return Cost 
+ */
 Cost ESplit::solve_vertical(int i1, int i2, int j1, int j2, unsigned long long key, CostTab A, Cost S_cost){
     int start = min(i1, j1);
     //Si on a plus d'1 sommet
@@ -279,12 +276,21 @@ Cost ESplit::solve_vertical(int i1, int i2, int j1, int j2, unsigned long long k
             A.at(E.at(z).second) /= W.at(z);
         }
     }else{
-        //cout << i1 << " " << i2 << " " << j1 << " " << j2 << '\n';
-        M[key] = 0UL;
+        M[key] = 0;
     }
     return M[key];
 }
 
+/**
+ * @brief computes the exterior cost of a shape given the exterior cost of its vertices
+ * 
+ * @param i1 
+ * @param i2 
+ * @param j1 
+ * @param j2 
+ * @param A 
+ * @param s out
+ */
 void ESplit::ext_cost(int i1, int i2, int j1, int j2, CostTab A, Cost& s){
     s = 1;
     if(i1 >= 0){
@@ -299,6 +305,15 @@ void ESplit::ext_cost(int i1, int i2, int j1, int j2, CostTab A, Cost& s){
     }
 }
 
+/**
+ * @brief converts a shape into a unique hexadecimal key
+ * 
+ * @param i1 
+ * @param i2 
+ * @param j1 
+ * @param j2 
+ * @return unsigned long long 
+ */
 unsigned long long ESplit::convert(int i1, int i2, int j1, int j2){
     unsigned long long res = 0;
     res |= (unsigned long long) i1 << 48;
@@ -324,7 +339,7 @@ void ESplit::init(string file){
     E.clear();
     bestOrder.clear();
     //get_approx_solution(bestCost, bestOrder, file);
-    bestCost = numeric_limits<short>::max() - 1;
+    bestCost = numeric_limits<short>::max() - 1; //je sais pas pourquoi passer autre chose qu'un short pose des soucis
     M[0xFFFFFFFFFFFFFFFF] = bestCost;
 
     ifstream ifile(file);
@@ -360,7 +375,7 @@ void ESplit::init(string file){
     }
     //petite manip pour éviter des segfault
     E.push_back(make_pair(size, size));
-    W.push_back(1UL);
+    W.push_back(1);
 }
 
 Cost ESplit::call_solve(){

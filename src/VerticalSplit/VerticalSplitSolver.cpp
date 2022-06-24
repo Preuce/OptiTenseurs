@@ -6,7 +6,7 @@
  * @param S The dimensions in this state
  * @return int the best cost for S
  */
-Cost SplitRange::solve(Tab S){
+Cost VSplit::solve(Tab S){
     //encodage de l'ensemble de sommets
     unsigned long long key = convert(S);
 
@@ -60,7 +60,7 @@ Cost SplitRange::solve(Tab S){
  * @param S The tensors in this state
  * @return Tab an updated copy of A
  */
-CostTab SplitRange::computeA(Tab S){
+CostTab VSplit::computeA(Tab S){
     for(int i : S){
         A[size*(S.size()-1) + i] = G[size*size + i];
         A[size*(S.size()-1) + i+size/2] = G[size*size + i+size/2];
@@ -82,7 +82,7 @@ CostTab SplitRange::computeA(Tab S){
  * @param S2 A state
  * @return int 
  */
-Cost SplitRange::cut(Tab S1, Tab S2){
+Cost VSplit::cut(Tab S1, Tab S2){
     Cost res = 1;
     for(int i : S1){
         for(int j : S2){
@@ -100,7 +100,7 @@ Cost SplitRange::cut(Tab S1, Tab S2){
  * @param A The external-weight of all tensors for each states
  * @return int 
  */
-Cost SplitRange::produit_sortant(Tab S, Tab A){
+Cost VSplit::produit_sortant(Tab S, Tab A){
     Cost res = 1;
     for(int i : S){
         res *= A[size*(S.size()-1) + i];
@@ -115,7 +115,7 @@ Cost SplitRange::produit_sortant(Tab S, Tab A){
  * @param S The tensors in this state
  * @return int 
  */
-long int SplitRange::convert(Tab S){
+long int VSplit::convert(Tab S){
     int res = 0;
     for(int i : S){
         if(i < size/2){
@@ -131,7 +131,7 @@ long int SplitRange::convert(Tab S){
  * @param key a code generated from a state using convert(S)
  * @return Tab 
  */
-Tab SplitRange::recover(unsigned long long key){
+Tab VSplit::recover(unsigned long long key){
     Tab res;
     for(int i = size/2; i >= 0; i--){
         int p = pow(2, i);
@@ -144,7 +144,7 @@ Tab SplitRange::recover(unsigned long long key){
     return res;
 }
 
-Tab SplitRange::recover_full(Tab S){
+Tab VSplit::recover_full(Tab S){
     Tab res;
     for(int i : S){
         res.push_back(i);
@@ -153,7 +153,7 @@ Tab SplitRange::recover_full(Tab S){
     return res;
 }
 
-void SplitRange::display_order(Tab S){
+void VSplit::display_order(Tab S){
     if(S.size() >= 1){
         long int key = convert(S);
         if(key != -1){
@@ -176,9 +176,9 @@ void SplitRange::display_order(Tab S){
  * @brief dummy method to use in template
  * 
  */
-void SplitRange::display_order(){}
+void VSplit::display_order(){}
 
-void SplitRange::init(string file){
+void VSplit::init(string file){
     S.clear();
     G.clear();
     A.clear();
@@ -226,6 +226,6 @@ void SplitRange::init(string file){
     solverGreedy.init(file);
 }
 
-Cost SplitRange::call_solve(){
+Cost VSplit::call_solve(){
     return solve(S);
 }

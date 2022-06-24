@@ -1,6 +1,6 @@
-#include "SideLimSolver.hpp"
+#include "SideExSolver.hpp"
 
-Cost SLim::solve(){
+Cost SideEx::solve(){
     pair<int, int> p;
     //nombre max d'arêtes centrales accumulées
     int kmax = 2*delta + 1;
@@ -72,7 +72,7 @@ Cost SLim::solve(){
  * @param p a buffer that stores the exact order of contraction
  * @return Cost 
  */
-Cost SLim::contract(int s, int k, int x, pair<int, int>& p){
+Cost SideEx::contract(int s, int k, int x, pair<int, int>& p){
     //on calcule les poids sortants des sommets s et s+D
     computeA(s, k);
     //on récupère les poids des arêtes latérales (pas nécessaire mais plus lisible)
@@ -138,7 +138,7 @@ Cost SLim::contract(int s, int k, int x, pair<int, int>& p){
  * @param k the index int T of the tensor t we just calc'ed
  * @param s the state we are currently at
  */
-void SLim::computeA(int s, int k){
+void SideEx::computeA(int s, int k){
     A[s] = G[size*s + s+1]*T[k];
     A[s+size/2] = G[size*(s+size/2) + s+1+size/2]*T[k];
 }
@@ -148,7 +148,7 @@ void SLim::computeA(int s, int k){
  * 
  * @param s the state
  */
-void SLim::restoreA(int s){
+void SideEx::restoreA(int s){
     A[s] = G[size*size + s]; //stock le poids sortant du sommet s
     A[s+size/2] = G[size*size + s+size/2];
 }
@@ -159,7 +159,7 @@ void SLim::restoreA(int s){
  * @param s a state
  * @param k the center-edge that lead to the best final cost
  */
-void SLim::display_order(int s, int k){
+void SideEx::display_order(int s, int k){
     int ofs = (s+1)*(s+1)-1;
     if(s >= 0){
         if(k > 1){
@@ -171,14 +171,14 @@ void SLim::display_order(int s, int k){
     }
 }
 
-void SLim::display_order(){
+void SideEx::display_order(){
     for(int i = 0; i < bestOrder.size()-1; i++){
         cout << bestOrder[i] << " - ";
     }
     cout << bestOrder.back() << '\n';
 }
 
-void SLim::get_order(int s, int k){
+void SideEx::get_order(int s, int k){
     int ofs = (s+1)*(s+1)-1;
     if(s >= 0){
         if(k > 1){
@@ -216,7 +216,7 @@ void SLim::get_order(int s, int k){
     }
 }
 
-void SLim::init(string file){
+void SideEx::init(string file){
     G.clear();
     A.clear();
     P.clear();
@@ -264,7 +264,7 @@ void SLim::init(string file){
     }
 }
 
-Cost SLim::call_solve(){
+Cost SideEx::call_solve(){
     Cost c = solve();
     get_order(size/2-2, Z[size/2-1]);
     bestOrder.push_back(size-2);

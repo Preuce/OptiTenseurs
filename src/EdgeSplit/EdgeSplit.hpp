@@ -3,9 +3,6 @@
 #include "../Components.hpp"
 #include "../TriScore/TriScore.hpp"
 
-void affiche(int i1, int i2, int j1, int j2);
-void affiche_A(Tab A);
-
 class ESplit : public Algorithm{
     public:
     vector<pair<int, int>> E;

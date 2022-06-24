@@ -7,7 +7,7 @@
  * 
  */
 
-class SplitRange : public Algorithm{
+class VSplit : public Algorithm{
     public:
     Tab G; //la matrice d'adjacence + 1 colonne donnant le poids sortant de chaque sommet
     Tab S; //un état (ensemble de sommets)

@@ -83,6 +83,12 @@ class Algorithm{
     Tab bestOrder;
     //temps
     chrono::duration<double> time;
+
+    bool still_up = true;
+
+    virtual void init(string file) {};
+    virtual Cost call_solve() {return 0;};
+    virtual void display_order() {};
 };
 
 #endif

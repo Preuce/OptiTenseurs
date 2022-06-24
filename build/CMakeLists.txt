@@ -19,11 +19,8 @@ set(MTS ../src/TriScoreMargin/)
 #SolverNTS
 set(NTS ../src/TriScoreNaive/)
 
-#SolverSideI
-set(SIDEITER ../src/SideIter/)
-
-#SolverSideL
-set(SIDELIM ../src/SideLimited/)
+#SolverSide
+set(SIDE ../src/SideEx/)
 
 #SolverSplit
 set(SPLIT ../src/Split/)
@@ -52,8 +49,7 @@ set(ALGORITHMS
     ${VSPLIT}VerticalSplitSolver.cpp 
     ${SPLIT}SplitSolver.cpp
     ${ESPLIT}EdgeSplit.cpp
-    ${SIDEITER}SideExSolver.cpp
-    ${SIDELIM}SideLimSolver.cpp
+    ${SIDE}SideExSolver.cpp
     ${SIMPLEGREEDY}SimpleG.cpp
     )
 
@@ -62,8 +58,7 @@ add_executable(SolverSimpleG ${SIMPLEGREEDY}SimpleG.cpp ${SIMPLEGREEDY}Main.cpp 
 add_executable(SolverSplit ${SPLIT}SplitSolver.cpp ${SPLIT}Main.cpp ${TOOLS})
 add_executable(SolverVSplit ${VSPLIT}VerticalSplitSolver.cpp ${VSPLIT}Main.cpp ${SPLIT}SplitSolver.cpp ${TOOLS})
 add_executable(SolverESplit ${ESPLIT}EdgeSplit.cpp ${ESPLIT}Main.cpp ${TS}TriScore.cpp ${TOOLS})
-add_executable(SolverSideI ${SIDEITER}SideExSolver.cpp ${SIDEITER}Main.cpp ${TOOLS})
-add_executable(SolverSideL ${SIDELIM}SideLimSolver.cpp ${SIDELIM}Main.cpp ${TOOLS})
+add_executable(SolverSide ${SIDE}SideExSolver.cpp ${SIDE}Main.cpp ${TOOLS})
 add_executable(SolverTS ${TS}TriScore.cpp ${TS}Main.cpp ${TOOLS})
 add_executable(SolverMTS ${MTS}TriScoreM.cpp ${MTS}Main.cpp ${TS}TriScore.cpp ${TOOLS})
 add_executable(SolverNTS ${NTS}TriScoreN.cpp ${NTS}Main.cpp ${TOOLS})

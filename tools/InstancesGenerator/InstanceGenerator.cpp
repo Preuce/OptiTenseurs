@@ -3,14 +3,12 @@
 
 //Code de génération d'instance
 
-void initInstances(int n, int min, int max, int amount, string dir){
-    string path = "../instances/" + dir + "/";
+void init_instance(int n ,int min, int max, string dir ){
     if(n%2!= 0){
         n--;
     }
-    for(int i = 1; i <= amount; i++){
-        string name = "instance_" + to_string(i) + "_" + to_string(n) + ".txt";
-        ofstream file(path + name);
+    string name = path + dir + ".txt";
+        ofstream file(name);
         if(file.is_open()){
             //informations sur l'instances
             //c name
@@ -54,14 +52,24 @@ void initInstances(int n, int min, int max, int amount, string dir){
             }
             file << "e " << n/2 - 1 << " " << n - 1 << " " << weights[n-2] << endl;
         }else{
-            printf("ERROR: Cannot open outfile\n");
+            cout << "Could not open outfile : " << name << '\n';
         }
+}
+
+void init_multiple(int n, int min, int max, int amount, string dir){
+    for(int i = 1; i <= amount; i++){
+        string name = dir + "_" + to_string(i);
+        init_instance(n, min, max, name);
+        cout << dir << " generated" << '\n';
     }
 }
 
 
 int main(int argc, char* argv[]){
-
+    chrono::milliseconds ms = chrono::duration_cast<chrono::milliseconds >(
+    chrono::system_clock::now().time_since_epoch()
+    );
+    srand(ms.count());
     for(int i = 1; i < argc - 1; i++){
         switch(*argv[i]){
             case 'm': //poids min
@@ -84,8 +92,18 @@ int main(int argc, char* argv[]){
                 dir = argv[i+1];
                 i++;
                 break;
+            case 'h': //aide
+
+                break;
+            case 't': //trial
+                
+                break;
         }
     }
-    initInstances(max(4, size), max(1, m), M, amount, dir);
+    if(amount > 1){
+        init_multiple(max(4, size), max(1, m), M, amount, dir);
+    }else{
+        init_instance(max(4, size), max(1, m), M, dir);
+    }
     cout << "Generation complete" << endl;
 }
