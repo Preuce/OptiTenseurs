@@ -1,13 +1,15 @@
 #include "SideExSolver.hpp"
 
-Cost SideIter::solve(){
+Cost SideEx::solve(){
     pair<int, int> p;
+    //nombre max d'arêtes centrales accumulées
+    int kmax = 2*delta + 1;
     //passage de l'état s, à s+1
     for(int s = 0; s < size/2-1; s++){
         int N = G[size*s + s+size/2]; //arête centrale à multiplier
         int ofs = 2*s; //offset dans le tableau T
         int ofsc = (s+1)*(s+1)-1; //offset dans le tableau C
-        for(int k = 2*(s+1); k >= 2; k--){ //à chaque étape, on considère 2 possibilités
+        for(int k = min(2*(s+1), kmax); k >= 2; k--){
             //pour chaque produits de Nk, on calcule le coût de garder l'arête
             T[k] = T[k-2]*N;
 
@@ -26,9 +28,9 @@ Cost SideIter::solve(){
                 //P[ofs] stock le meilleur coût Rs obtenu pour l'instant
                 P[ofs] = Rs;
                 //on stock l'arête centrale donnant le meilleur coût pour R et Q à l'état s 
-                Z[s] = k; 
+                Z[s] = k;
                 //on stock l'ordre (la paire d'arête) dans lequel on a contracté
-                O[ofsc] = p; 
+                O[ofsc] = p;
 
                 //l'arête centrale donnant le meilleur coût pour R est aussi celle donnant le meilleur coût pour Q
                 int Qs = C[k-2] + contract(s, k, 1, p);
@@ -50,12 +52,12 @@ Cost SideIter::solve(){
     int N = G[size*s + s+size/2];
     int cost = INT32_MAX;
 
-    for(int k = 0; k <= 2*s; k++){
+    for(int k = 0; k <= min(2*s, kmax); k++){
         int ck = C[k] + T[k]*N;
         if(ck < cost && ck > 0){
             cost = ck;
             //donne le k de l'avant-dernier état qui mène à l'optimum, afin de le récupérer facilement
-            Z[s] = k; 
+            Z[s] = k;
         }
     }
     return cost; 
@@ -65,12 +67,12 @@ Cost SideIter::solve(){
  * @brief computes the contraction cost
  * 
  * @param s the state we are currently at
- * @param k the index in T of the tensor t we just calc'ed
+ * @param k the index in T of the tensor t we consider as the central edge
  * @param x the contraction
  * @param p a buffer that stores the exact order of contraction
  * @return Cost 
  */
-Cost SideIter::contract(int s, int k, int x, pair<int, int>& p){
+Cost SideEx::contract(int s, int k, int x, pair<int, int>& p){
     //on calcule les poids sortants des sommets s et s+D
     computeA(s, k);
     //on récupère les poids des arêtes latérales (pas nécessaire mais plus lisible)
@@ -136,8 +138,7 @@ Cost SideIter::contract(int s, int k, int x, pair<int, int>& p){
  * @param k the index int T of the tensor t we just calc'ed
  * @param s the state we are currently at
  */
-void SideIter::computeA(int s, int k){
-    //pour s et s+D, on ignore l'arête "de derrière"
+void SideEx::computeA(int s, int k){
     A[s] = G[size*s + s+1]*T[k];
     A[s+size/2] = G[size*(s+size/2) + s+1+size/2]*T[k];
 }
@@ -147,8 +148,8 @@ void SideIter::computeA(int s, int k){
  * 
  * @param s the state
  */
-void SideIter::restoreA(int s){
-    A[s] = G[size*size + s];
+void SideEx::restoreA(int s){
+    A[s] = G[size*size + s]; //stock le poids sortant du sommet s
     A[s+size/2] = G[size*size + s+size/2];
 }
 
@@ -158,7 +159,7 @@ void SideIter::restoreA(int s){
  * @param s a state
  * @param k the center-edge that lead to the best final cost
  */
-void SideIter::display_order(int s, int k){
+void SideEx::display_order(int s, int k){
     int ofs = (s+1)*(s+1)-1;
     if(s >= 0){
         if(k > 1){
@@ -170,14 +171,14 @@ void SideIter::display_order(int s, int k){
     }
 }
 
-void SideIter::display_order(){
+void SideEx::display_order(){
     for(int i = 0; i < bestOrder.size()-1; i++){
         cout << bestOrder[i] << " - ";
     }
     cout << bestOrder.back() << '\n';
 }
 
-void SideIter::get_order(int s, int k){
+void SideEx::get_order(int s, int k){
     int ofs = (s+1)*(s+1)-1;
     if(s >= 0){
         if(k > 1){
@@ -215,7 +216,7 @@ void SideIter::get_order(int s, int k){
     }
 }
 
-void SideIter::init(string file){
+void SideEx::init(string file){
     G.clear();
     A.clear();
     P.clear();
@@ -224,6 +225,7 @@ void SideIter::init(string file){
     O.clear();
     Z.clear();
     bestOrder.clear();
+    int kmax;
 
     ifstream ifile(file);
     string line;
@@ -233,11 +235,17 @@ void SideIter::init(string file){
         switch(line[0]){
             case 'p':
                 size = atoi(&line[2]);
+                if(refdelta <= 0){ //on pourrait mettre une inégalité stricte, celà impliquerait qu'on s'interdit de garder l'arête centrale, mais nécessiterait de modifier la boucle principal
+                    delta = size/2; //pk tu casses
+                }else{
+                    delta = min(refdelta, size/2);
+                }
+                kmax = 2*delta+1;
                 G.resize(size*(size+1), 1);
                 A.resize(size, 1);
                 P.resize(size, -1);
-                C.resize(2*(size/2)-1, 0); //tableau des coûts
-                T.resize(2*(size/2)-1, 1); //tableau des t
+                C.resize(min(2*(size/2)-1, kmax), 0); //tableau des coûts
+                T.resize(min(2*(size/2)-1, kmax), 1); //tableau des arêtes centrales
                 O.resize(size*size/4, {-1, -1});
                 Z.resize(size/2, -1);
             break;
@@ -256,43 +264,9 @@ void SideIter::init(string file){
     }
 }
 
-void SideIter::execfile(string file){
-    string path = "../instances/" + file;
-    //cout << "Starting initialisation on : " << file << endl;
-    init(path);
-    //cout << "End of initialisation" << endl;
-    //cout << "Starting solving" << endl;
-    auto start = std::chrono::high_resolution_clock::now();
-    bestCost = solve();
-    auto end = std::chrono::high_resolution_clock::now();
-    time = end-start;
-    cout << "Best cost : " << bestCost << '\n';
-    get_order(size/2-2, Z[size/2-1]);    
+Cost SideEx::call_solve(){
+    Cost c = solve();
+    get_order(size/2-2, Z[size/2-1]);
     bestOrder.push_back(size-2);
-    cout << "Best order : ";
-    display_order();
-    std::cout << std::scientific << "Temps : " << time.count()<< "s" << '\n';
-    cout << "--------------" << endl;
-}
-
-void SideIter::execdir(string dir){
-    string base = "../instances/" + dir + "/";
-    DIR* dp = NULL;
-    struct dirent *file = NULL;
-    dp = opendir(base.c_str());
-    if(dp == NULL){
-        cerr << "Could not open directory : " << base << '\n';
-        exit(-1);
-    }
-    file = readdir(dp);
-    
-    while(file != NULL){
-        if(file->d_name[0] != '.'){
-            string path = base + file->d_name;
-            display(path);
-            execfile(path);
-        }
-        file = readdir(dp);
-    }
-    closedir(dp);
+    return c;
 }

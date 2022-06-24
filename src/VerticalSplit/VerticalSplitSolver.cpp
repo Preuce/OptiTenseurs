@@ -6,11 +6,13 @@
  * @param S The dimensions in this state
  * @return int the best cost for S
  */
-Cost SplitRange::solve(Tab S){
+Cost VSplit::solve(Tab S){
     //encodage de l'ensemble de sommets
-    long int key = convert(S);
+    unsigned long long key = convert(S);
 
-    if(C[key] == -1 && S.size() > 1){
+    if(C.find(key) == C.end() && S.size() > 1){
+        C[key] = bestCost+1;
+
         Cost cost;
         
         Tab S1;
@@ -32,8 +34,13 @@ Cost SplitRange::solve(Tab S){
                 S2.push_back(S[k]);
             }
             //on résoud S1 de manière exacte, on découpe S2 (le reste du TT)
-            cost = solverGreedy.solve(S1) + solve(S2) + cout_sortant*cut(S1, S2);
-            if(cost < C[key] && cost > 0|| C[key] == -1){
+            cost = solverGreedy.solve(S1);
+            if(!S2.empty() > 0){
+                cost += + solve(S2) + cout_sortant*cut(S1, S2);
+            } 
+            //cout << cost << '\n';
+            //cout << C[key] << '\n';
+            if(cost > 0 && (cost < C[key] || C.find(key) == C.end())){
                 C[key] = cost;
                 P1[key] = convert(S1);
                 P2[key] = convert(S2);
@@ -53,7 +60,7 @@ Cost SplitRange::solve(Tab S){
  * @param S The tensors in this state
  * @return Tab an updated copy of A
  */
-Tab SplitRange::computeA(Tab S){
+CostTab VSplit::computeA(Tab S){
     for(int i : S){
         A[size*(S.size()-1) + i] = G[size*size + i];
         A[size*(S.size()-1) + i+size/2] = G[size*size + i+size/2];
@@ -75,7 +82,7 @@ Tab SplitRange::computeA(Tab S){
  * @param S2 A state
  * @return int 
  */
-Cost SplitRange::cut(Tab S1, Tab S2){
+Cost VSplit::cut(Tab S1, Tab S2){
     Cost res = 1;
     for(int i : S1){
         for(int j : S2){
@@ -93,7 +100,7 @@ Cost SplitRange::cut(Tab S1, Tab S2){
  * @param A The external-weight of all tensors for each states
  * @return int 
  */
-Cost SplitRange::produit_sortant(Tab S, Tab A){
+Cost VSplit::produit_sortant(Tab S, Tab A){
     Cost res = 1;
     for(int i : S){
         res *= A[size*(S.size()-1) + i];
@@ -108,7 +115,7 @@ Cost SplitRange::produit_sortant(Tab S, Tab A){
  * @param S The tensors in this state
  * @return int 
  */
-long int SplitRange::convert(Tab S){
+long int VSplit::convert(Tab S){
     int res = 0;
     for(int i : S){
         if(i < size/2){
@@ -124,7 +131,7 @@ long int SplitRange::convert(Tab S){
  * @param key a code generated from a state using convert(S)
  * @return Tab 
  */
-Tab SplitRange::recover(long int key){ //TODO: repasser en "norme classique" pour display solverGreedy
+Tab VSplit::recover(unsigned long long key){
     Tab res;
     for(int i = size/2; i >= 0; i--){
         int p = pow(2, i);
@@ -137,7 +144,7 @@ Tab SplitRange::recover(long int key){ //TODO: repasser en "norme classique" pou
     return res;
 }
 
-Tab SplitRange::recover_full(Tab S){
+Tab VSplit::recover_full(Tab S){
     Tab res;
     for(int i : S){
         res.push_back(i);
@@ -146,7 +153,7 @@ Tab SplitRange::recover_full(Tab S){
     return res;
 }
 
-void SplitRange::display_order(Tab S){
+void VSplit::display_order(Tab S){
     if(S.size() >= 1){
         long int key = convert(S);
         if(key != -1){
@@ -165,14 +172,21 @@ void SplitRange::display_order(Tab S){
     }
 }
 
-void SplitRange::init(string file){
-    //hardcoder les poids voisinant les sommets dans un fichier texte
+/**
+ * @brief dummy method to use in template
+ * 
+ */
+void VSplit::display_order(){}
+
+void VSplit::init(string file){
     S.clear();
     G.clear();
     A.clear();
     C.clear();
     P1.clear();
     P2.clear();
+
+    bestCost = numeric_limits<Cost>::max()-1;
 
     ifstream ifile(file);
     string line;
@@ -182,15 +196,16 @@ void SplitRange::init(string file){
         switch(line[0]){
             case 'p':
                 size = atoi(&line[2]);
-                    if(delta <= 0){
-                    delta = min(3, size/2);
+                delta = min(3, size/2);
+                if(refdelta > 0){
+                    delta = min(delta, refdelta);
                 }
                 S.resize(size/2);
                 G.resize(size*(size+1), 1);
                 A.resize(size*size, 1);
-                C.resize(pow(2, size/2), -1);
+                /*C.resize(pow(2, size/2), -1);
                 P1.resize(pow(2, size/2), -1);
-                P2.resize(pow(2,size/2), -1);
+                P2.resize(pow(2,size/2), -1);*/
             break;
             case 'e':
                 flux >> i >> j >> w;
@@ -211,44 +226,6 @@ void SplitRange::init(string file){
     solverGreedy.init(file);
 }
 
-void SplitRange::execfile(string file){
-    string path = "../instances/" + file;
-    //cout << "Starting initialisation on : " << file << endl;
-    init(path);
-    //solverGreedy.init(path);
-    //cout << "End of initialisation" << endl;
-    //cout << "Starting solving" << endl;
-    cout << "Delta : " << delta << '\n';
-    auto start = std::chrono::high_resolution_clock::now();
-    bestCost = solve(S);
-    cout << "Best cost : " << bestCost << '\n';
-    auto end = std::chrono::high_resolution_clock::now();
-    time = end-start;
-    cout << "Best order : ";
-    display_order(S);
-    std::cout << std::scientific << "Temps : " << time.count()<< "s" << std::endl;
-    cout << "--------------" << endl;
-    delta = -1;
-}
-
-void SplitRange::execdir(string dir){
-    string base = "../instances/" + dir + "/";
-    DIR* dp = NULL;
-    struct dirent *file = NULL;
-    dp = opendir(base.c_str());
-    if(dp == NULL){
-        cerr << "Could not open directory : " << base << '\n';
-        exit(-1);
-    }
-    file = readdir(dp);
-    
-    while(file != NULL){
-        if(file->d_name[0] != '.'){
-            string path = base + file->d_name;
-            display(path);
-            execfile(path);
-        }
-        file = readdir(dp);
-    }
-    closedir(dp);
+Cost VSplit::call_solve(){
+    return solve(S);
 }

@@ -1,28 +1,68 @@
 #include "TriScoreM.hpp"
 
-Cost TriScoreM::solve(){
-    //TriScore a été exécuté à l'initialisation de l'instance
-    //on obtient une borne supérieure au meilleur coût, et un ordre de référence
-    Tab refOrder = bestOrder;
 
-    for(int d = 1; d <= delta; d++){
-        for(int i = 0; i < E.size()-d; i++){
-            //copie de l'ordre de référence
-            Tab S (refOrder);
-            int n = S[i];
-            //modification de l'ordre
-            for(int k = i; k < i+d; k++){
-                S[k] = S[k+1];
+/**
+ * @brief 
+ * 
+ * @param cr the remaining credits
+ * @param s the index we are considering
+ * @param n the amount of indexes left to place
+ */
+void TriScoreM::solve(int cr, int s, int n){
+    //si il nous reste du crédit
+    if(cr > 0){
+        //pour toutes les distances qui sont inférieures ou égales au crédit
+        for(int d = 0; d <= cr; d++){
+            //si l'emplacement vers la gauche à cette distance est valide 
+            if(s >= d && R[s-d]== -1){
+                R[s-d] = s;
+                VB[s] = 1;
+                
+                //si on a encore des arêtes à placer après celle-là, on poursuit le parcours
+                if(n > 1){
+                    //si l'arête à l'indice où on a atterri n'a pas encore été placée, on poursuit l'exécution sur elle
+                    if(is_still_in(s-d)){
+                        solve(cr-d, s-d, n-1);
+                    //sinon on prend les arêtes encore à placer et on tente notre chance
+                    }else{
+                        for(int i : still_in()){
+                            solve(cr-d, i, n-1);
+                        }
+                    }
+                }else{
+                    //Si on a plus d'arêtes à placer, on converti le tableau R en un ordre, puis on calcule
+                    follow_order(generate_order(R));
+                }
+                //on remet les tableaux à l'état précédent
+                R[s-d] = -1;
+                VB[s] = 0;
             }
-            S[i+d] = n;
-            Cost cost = follow_order(S);
-            if(cost > 0 && (cost < bestCost || bestCost == -1)){
-                bestCost = cost;
-                bestOrder = S;
+
+            //même chose pour le côté droit
+            if(s+d < R.size() && R[s+d]==-1){
+                R[s+d] = s;
+                VB[s] = 1;
+                if(n > 1){
+                    if(is_still_in(s+d)){
+                        solve(cr-d, s+d, n-1);
+                    }else{
+                        for(int i : still_in()){
+                            solve(cr-d, i, n-1);
+                        }
+                    }
+                }else{
+                    follow_order(generate_order(R));
+                }
+                R[s+d] = -1;
+                VB[s] = 0;
             }
         }
+    }else{
+        Tab R_copy (R);
+        if(place_to_default(R_copy)){
+            follow_order(generate_order(R_copy));
+        }
     }
-    return bestCost;
 }
 
 /**
@@ -31,14 +71,21 @@ Cost TriScoreM::solve(){
  * @param S the list of edges to contract
  * @return Cost 
  */
-Cost TriScoreM::follow_order(Tab S){
+void TriScoreM::follow_order(Tab S){
     SousG sg = getSG();
     Cost cost = 0;
+    bool still_up = true;
     for(int i : S){
         cost += contract(i, sg);
-        if(cost >= bestCost && bestCost != -1){return -1;}
+        if(cost >= bestCost /*&& bestCost != -1*/){
+            still_up = false;
+            break;
+        }
     }
-    return cost;
+    if(still_up && cost < bestCost){
+        bestCost = cost;
+        bestOrder = S;
+    }
 }
 
 /**
@@ -89,6 +136,49 @@ int SousG::C(int i){
     return i;
 }
 
+
+bool TriScoreM::is_still_in(int s){
+    return !VB[s];
+}
+
+/**
+ * @brief returns a vector containing all the edges remaining to be placed
+ * 
+ * @return Tab 
+ */
+Tab TriScoreM::still_in(){
+    Tab res;
+    for(int i = 0; i < VB.size(); i++){
+        if(!VB[i]){
+            res.push_back(i);
+        }
+    }
+    return res;
+}
+
+bool TriScoreM::place_to_default(Tab& R){
+    for(int i : still_in()){
+        if(R[i] == -1){
+            R[i] = i;
+        }else{
+            return false;
+        }
+    }
+    return true;
+}
+
+unsigned long long TriScoreM::convert(Tab S){
+
+}
+
+Tab TriScoreM::generate_order(Tab R){
+    Tab res;
+    for(int i : R){
+        res.push_back(triscore.bestOrder[i]);
+    }
+    return res;
+}
+
 void TriScoreM::display_order(){
     for(int i = 0; i < bestOrder.size()-1; i++){
         cout << bestOrder[i] << " - ";
@@ -98,10 +188,11 @@ void TriScoreM::display_order(){
 
 void TriScoreM::init(string file){
     triscore.init(file);
-
     G.clear();
     E.clear();
-    bestCost = -1;
+    R.clear();
+    VB.clear();
+    //bestCost = -1;
     bestOrder.clear();
 
     ifstream ifile(file);
@@ -113,7 +204,9 @@ void TriScoreM::init(string file){
             case 'p':
                 size = atoi(&line[2]);
                 G.resize(size*size, 1);
-                delta = min(max(delta, 1), 3*size/2 - 2);
+                delta = min(max(refdelta, 0), 3*size/2 - 2);
+                R.resize(3*size/2 - 2, -1);
+                VB.resize(3*size/2 - 2, false);
             break;
             case 'e':
                 flux >> i >> j >> w;
@@ -136,43 +229,7 @@ void TriScoreM::init(string file){
     sort_edges(E);
 }
 
-void TriScoreM::execfile(string file){
-    string path = "../instances/" + file;
-    //cout << "Starting initialisation on : " << file << endl;
-    init(path);
-    //cout << "End of initialisation" << endl;
-    //cout << "Starting solving" << endl;
-    cout << "Delta : " << delta << '\n';
-    auto start = std::chrono::high_resolution_clock::now();
-    bestCost = solve();
-    cout << "Best cost : " << bestCost << '\n';
-    auto end = std::chrono::high_resolution_clock::now();
-    time = end-start;
-    cout << "Best order : ";
-    display_order();
-    std::cout << std::scientific << "Temps : " << time.count()<< "s" << std::endl;
-    cout << "--------------" << endl;
-    delta = -1;
-}
-
-void TriScoreM::execdir(string dir){
-    string base = "../instances/" + dir + "/";
-    DIR* dp = NULL;
-    struct dirent *file = NULL;
-    dp = opendir(base.c_str());
-    if(dp == NULL){
-        cerr << "Could not open directory : " << base << '\n';
-        exit(-1);
-    }
-    file = readdir(dp);
-    
-    while(file != NULL){
-        if(file->d_name[0] != '.'){
-            string path = base + file->d_name;
-            display(path);
-            execfile(path);
-        }
-        file = readdir(dp);
-    }
-    closedir(dp);
+Cost TriScoreM::call_solve(){
+    solve(delta, 0, E.size());
+    return bestCost;
 }

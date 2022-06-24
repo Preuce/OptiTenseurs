@@ -13,19 +13,15 @@ Network contract(int i, int j, Network N);
 Cost contractionCost(int i, int j, Network N);
 void display(Network N);
 
-class MatrixSolver{
+class MatrixSolver : public Algorithm{
     public:
-        int size; //nombre de sommets
         Network network; //matrice d'adjacence
 
-        Cost bestCost;
-        vector<pair<int, int>> bestOrder;
-        std::chrono::duration<double> time;
         void solve(int n, Cost cost, vector<pair<int, int>> v, Network N);
-        void display_best_order();
+        void display_order();
+        
         void init(string file);
-        void execfile(string file);
-        void execdir(string dir);
+        Cost call_solve();
 };
 
 #endif

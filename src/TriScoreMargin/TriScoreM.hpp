@@ -18,27 +18,30 @@ class SousG{
     void set(Tab G, Tab V){this->G = G; this->V = V;};
 };
 
-class TriScoreM{
+class TriScoreM : public Algorithm{
     public:
     TriScore triscore;
-    int size;
-    int delta;
+
     vector<pair<int, int>> E;
     Tab G;
 
-    Tab bestOrder;
-    Cost bestCost;
-    std::chrono::duration<double> time;
+    Tab R;
+    vector<bool> VB;
 
     SousG getSG(){SousG sg; sg.set(G, vector<int> (size, -1)); return sg;}
-    Cost solve();
-    Cost follow_order(Tab S);
+    void solve(int cr, int s, int n);
+    void follow_order(Tab S);
     Cost contract(int i, SousG& sg);
+    bool is_still_in(int s);
+    Tab still_in();
+    bool place_to_default(Tab& R);
+    Tab generate_order(Tab R);
+    unsigned long long convert(Tab S);
+
     void display_order();
 
     void init(string file);
-    void execfile(string file);
-    void execdir(string dir);
+    Cost call_solve();
 };
 
 #endif

@@ -7,7 +7,9 @@ Cost SimpleG::solve(SouG& sg){
     SouG sgref = sg; 
 
     //cas où il reste plusieurs arêtes, et le coût de l'ensemble n'a pas encore été calculé
-    if(sg.S.size() > 1 && C[key] == -1){
+    if(sg.S.size() > 1 && C.find(key) == C.end()){
+        C[key] = bestCost+1;
+
         for(int i = 0; i < sgref.S.size(); i++){
             //on copie la copie, et on laisse l'arête en cours de côté
             SouG sg2 = sgref;
@@ -17,7 +19,7 @@ Cost SimpleG::solve(SouG& sg){
             Cost cost = solve(sg2);
             //on contract finalement l'arête mise de côté
             cost += contract(sgref.S[i], sg2);
-            if((cost < C[key] || C[key] == -1) && cost > 0){
+            if(cost < C[key] && cost > 0){
                 //mémoïsation
                 C[key] = cost;
                 O[key] = sgref.S[i];
@@ -26,7 +28,7 @@ Cost SimpleG::solve(SouG& sg){
                 sg.V = sg2.V;
             }
         }
-    }else if(C[key] == -1){
+    }else if(C.find(key) == C.end()){
         //si il ne reste qu'une arête mais que le coût n'a pas été calculé
         C[key] = contract(sg.S[0], sg);
         O[key] = sg.S[0];
@@ -125,8 +127,8 @@ int SouG::C(int i){
  * @param S 
  * @return int 
  */
-int SimpleG::get_key(Tab S){
-    int res = 0;
+unsigned long long SimpleG::get_key(Tab S){
+    unsigned long long res = 0;
     for(int i : S){
         res += pow(2, i);
     }
@@ -138,9 +140,9 @@ int SimpleG::get_key(Tab S){
  * 
  * @param key 
  */
-void SimpleG::display_order(int key){
+void SimpleG::display_order(unsigned long long key){
     int i = O[key]; //i = la meilleure arête à contracter pour l'état key-2^i + 1
-    int next = key-pow(2, i);
+    unsigned long long next = key-pow(2, i);
     if(key == get_key(S)){
         display_order(next);
         cout << i << '\n';
@@ -160,14 +162,16 @@ void SimpleG::display_order(){
 
 }
 
-void SimpleG::get_order(int key){
-    bestOrder.clear();
+void SimpleG::get_order(unsigned long long key){
     int i = O[key];
-    int next = key-pow(2, i);
-    if(next >= 0){
+
+    unsigned long long next = key-pow(2, i);
+
+    if(next+1 > 0){
         get_order(next);
         bestOrder.push_back(i);
     }else{
+        bestOrder.clear();
         bestOrder.push_back(i);
     }
 }
@@ -179,6 +183,7 @@ void SimpleG::init(string file){
     C.clear();
     S.clear();
 
+    bestCost = numeric_limits<Cost>::max() - 1;
     bestOrder.clear();
 
     ifstream ifile(file);
@@ -191,8 +196,8 @@ void SimpleG::init(string file){
                 size = atoi(&line[2]);
                 G.resize(size*size, 1);
                 S.resize(3*size/2 - 2);
-                O.resize(pow(2, 3*size/2-2)-1, -1);
-                C.resize(pow(2, 3*size/2-2)-1, -1);
+                //O.resize(pow(2, 3*size/2-2)-1, -1);
+                //C.resize(pow(2, 3*size/2-2)-1, -1);
             break;
             case 'e':
                 flux >> i >> j >> w;
@@ -217,43 +222,8 @@ void SimpleG::init(string file){
     sgref = getSG();
 }
 
-void SimpleG::execfile(string file){
-    string path = "../instances/" + file;
-
-    //cout << "Starting initialisation on : " << file << endl;
-    init(path);
-    //cout << "End of initialisation" << endl;
-    //cout << "Starting solving" << endl;
-    auto start = std::chrono::high_resolution_clock::now();
-    bestCost = solve(sgref);
-    auto end = std::chrono::high_resolution_clock::now();
-    time = end-start;
-    cout << "Best cost* : " << bestCost << endl;
-    cout << "Best order : ";
+Cost SimpleG::call_solve(){
+    Cost c = solve(sgref);
     get_order(get_key(S));
-    display_order();
-    std::cout << std::scientific << "Temps : " << time.count()<< "s" << std::endl;
-    cout << "--------------" << endl;
-}
-
-void SimpleG::execdir(string dir){
-    string base = "../instances/" + dir + "/";
-    DIR* dp = NULL;
-    struct dirent *file = NULL;
-    dp = opendir(base.c_str());
-    if(dp == NULL){
-        cerr << "Could not open directory : " << base << '\n';
-        exit(-1);
-    }
-    file = readdir(dp);
-    
-    while(file != NULL){
-        if(file->d_name[0] != '.'){
-            string path = base + file->d_name;
-            display(path);
-            execfile(path);
-        }
-        file = readdir(dp);
-    }
-    closedir(dp);
+    return c;
 }

@@ -15,17 +15,12 @@
  */
 void get_approx_solution(int& cost, Tab& O, string file);
 
-class TriScore{
+class TriScore : public Algorithm{
     public:
-    int size;
     Tab G; //une matrice d'adjacence
     vector<pair<int, double>> R; //La liste des scores triés
     vector<pair<int, int>> E; //la liste des arètes
-    Tab V; //la correspondance entre les sommets (tkt)
-
-    Tab bestOrder; //l'ordre
-    int bestCost;
-    std::chrono::duration<double> time;
+    Tab V; //la correspondance entre les sommets (un genre d'étiquettage)
 
     Cost solve();
     //met à jour la liste des score après suppression d'une arète
@@ -38,8 +33,6 @@ class TriScore{
     void display_order();
 
     void init(string file);
-
-    void execfile(string file);
-    void execdir(string dir);
+    Cost call_solve();
 };
 #endif

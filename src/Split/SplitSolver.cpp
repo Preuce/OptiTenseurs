@@ -8,11 +8,12 @@
  */
 Cost Split::solve(Tab S){
     //encodage de l'ensemble de sommets
-    long int key = convert(S);
+    unsigned long long key = convert(S);
 
     //si il reste plus d'1 sommet et que le coût n'a pas encore été calculé
-    if(C[key] == -1 && S.size() > 1){
-        int cost;
+    if(C.find(key) == C.end() && S.size() > 1){
+        C[key] = bestCost+1;
+        Cost cost;
         
         Tab S1;
         Tab S2;
@@ -33,11 +34,14 @@ Cost Split::solve(Tab S){
                 for(int k = i+1; k < S.size(); k++){
                     S2.push_back(S[k]);
                 }
-                cost = solve(S1) + solve(S2) + cout_sortant*cut(S1, S2);
-                if(cost < C[key] && cost > 0|| C[key] == -1){
+                cost = solve(S1);
+                if(!S2.empty()){ 
+                    cost += solve(S2) + cout_sortant*cut(S1, S2);
+                }
+                if(cost < C[key] && cost > 0){
                     C[key] = cost;
-                    P1[key] = convert(S1);
-                    P2[key] = convert(S2);
+                    //P1[key] = convert(S1);
+                    //P2[key] = convert(S2);
                 }
             }
         }while(next_permutation(S.begin(), S.end()));
@@ -101,8 +105,8 @@ Cost Split::produit_sortant(Tab S, Tab A){
  * @param S The tensors in this state
  * @return int 
  */
-long int Split::convert(Tab S){
-    int res = 0;
+unsigned long long Split::convert(Tab S){
+    unsigned long long res = 0;
     for(int i : S){
         res += pow(2, i);
     }
@@ -115,7 +119,7 @@ long int Split::convert(Tab S){
  * @param key a code generated from a state using convert(S)
  * @return Tab 
  */
-Tab Split::recover(long int key){
+Tab Split::recover(unsigned long long key){
     Tab res;
     for(int i = size; i >= 0; i--){
         int p = pow(2, i);
@@ -140,13 +144,20 @@ void Split::display_order(Tab S){//dégueulasse
     }
 }
 
+/**
+ * @brief dummy methods to use in template
+ * 
+ */
+void Split::display_order(){}
+
 void Split::init(string file){
     S.clear();
     G.clear();
     A.clear();
     C.clear();
-    P1.clear();
-    P2.clear();
+    //P1.clear();
+    //P2.clear();
+    bestCost = numeric_limits<Cost>::max() - 1;
 
     ifstream ifile(file);
     string line;
@@ -156,13 +167,13 @@ void Split::init(string file){
         switch(line[0]){
             case 'p':
                 size = atoi(&line[2]);
-                G.resize(size*size, 1);
+                
                 S.resize(size);
                 G.resize(size*(size+1), 1);
                 A.resize(size*size, 1);
-                C.resize(pow(2, size), -1);
-                P1.resize(pow(2, size), -1);
-                P2.resize(pow(2,size), -1);
+                //C.resize(pow(2, size), -1);
+                //P1.resize(pow(2, size), -1);
+                //P2.resize(pow(2,size), -1);
             break;
             case 'e':
                 flux >> i >> j >> w;
@@ -181,42 +192,6 @@ void Split::init(string file){
     }
 }
 
-void Split::execfile(string file){
-    string path = "../instances/" + file;
-    //cout << "Starting initialisation on : " << file << endl;
-    init(path);
-    //cout << "End of initialisation" << endl;
-    //cout << "Starting solving" << endl;
-    auto start = std::chrono::high_resolution_clock::now();
-    bestCost = solve(S);
-    auto end = std::chrono::high_resolution_clock::now();
-    time = end-start;
-    cout << "Best cost* : " << bestCost << '\n';
-    cout << "Best order : " << '\n';
-    display_order(S);
-    std::cout << std::scientific << "Temps : " << time.count()<< "s" << '\n';
-    cout << "--------------" << endl;
+Cost Split::call_solve(){
+    return solve(S);
 }
-
-void Split::execdir(string dir){
-    string base = "../instances/" + dir + "/";
-    DIR* dp = NULL;
-    struct dirent *file = NULL;
-    dp = opendir(base.c_str());
-    if(dp == NULL){
-        cerr << "Could not open directory : " << base << '\n';
-        exit(-1);
-    }
-    file = readdir(dp);
-    
-    while(file != NULL){
-        if(file->d_name[0] != '.'){
-            string path = base + file->d_name;
-            display(path);
-            execfile(path);
-        }
-        file = readdir(dp);
-    }
-    closedir(dp);
-}
-

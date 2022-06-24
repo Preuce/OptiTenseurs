@@ -10,11 +10,11 @@ int main(int argc, char* argv[]){
             break;
         case 2:
             display(argv[1]);
-            solver.execfile(argv[1]);
+            execfile<MatrixSolver>(solver, argv[1]);
             break;
         case 3:
             if(argv[1] == string("d")){
-                solver.execdir(argv[2]);
+                execdir<MatrixSolver>(solver, argv[2]);
             }
             break;
         default:

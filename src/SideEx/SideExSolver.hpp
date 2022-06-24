@@ -6,11 +6,8 @@
  * @brief Version optimisée de SideIter, n'autorisant pas l'accumulation de plus de DELTA arêtes centrales
  * Peu viable lorsque les arêtes centrales sont de faible dimension 
  */
-class SLim{
+class SideEx : public Algorithm{
     public:
-    public:
-    int size;
-    int delta = -1;
     //(on rappelle que D = size/2)
     Tab A; //poids sortant (taille size);
     Tab G; //matrice d'adjacence (taille size*(size+1))
@@ -21,10 +18,6 @@ class SLim{
     
     Tab Z; //size/2, donne la référence de R et S
     vector<pair<int, int>> O; //tableau stockant l'ensemble des pairs de contractions donnant des coûts minimum
-
-    Tab bestOrder;
-    int bestCost;
-    std::chrono::duration<double> time;
 
     Cost solve();
 
@@ -37,8 +30,6 @@ class SLim{
     void get_order(int s, int k);
 
     void init(string file);
-
-    void execfile(string file);
-    void execdir(string dir);
+    Cost call_solve();
 };
 #endif

@@ -1,7 +1,7 @@
 #include "VerticalSplitSolver.hpp"
 
 int main(int argc, char* argv[]){
-    SplitRange solver;
+    VSplit solver;
     const char* path;
     bool sf = true;
 
@@ -23,7 +23,7 @@ int main(int argc, char* argv[]){
                     cerr << "Missing argument : range" << '\n';
                     exit(-1);
                 }
-                solver.delta = atoi(argv[i+1]);
+                solver.refdelta = atoi(argv[i+1]);
                 i++;
             }else{
                 path = argv[i];
@@ -32,9 +32,9 @@ int main(int argc, char* argv[]){
     }
     if(sf){
         display(path);
-        solver.execfile(path);
+        execfile(solver, path);
     }else{
-        solver.execdir(path);
+        execdir(solver, path);
     }
     return 0;
 }

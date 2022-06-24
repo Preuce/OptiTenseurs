@@ -1,7 +1,7 @@
-#include "TriScoreM.hpp"
+#include "EdgeSplit.hpp"
 
 int main(int argc, char* argv[]){
-    TriScoreM solver;
+    ESplit solver;
     const char* path;
     bool sf = true;
 
@@ -32,9 +32,9 @@ int main(int argc, char* argv[]){
     }
     if(sf){
         display(path);
-        execfile<TriScoreM>(solver, path);
+        execfile<ESplit>(solver, path);
     }else{
-        execdir<TriScoreM>(solver, path);
+        execdir<ESplit>(solver, path);
     }
     return 0;
 }

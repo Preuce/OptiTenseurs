@@ -6,7 +6,7 @@
  * @return int 
  */
 Cost TriScore::solve(){
-    int cost = 0;
+    bestCost = 0;
     //tant qu'il reste des arêtes
     while(!R.empty()){
         bestOrder.push_back(R.front().first);
@@ -15,7 +15,7 @@ Cost TriScore::solve(){
         int k = C(E[R.front().first].second);
         if(i != k){
             //ajoute le coût de contraction de R.front à cost
-            cost += ext_cost(i, k)*G[size*i + k];
+            bestCost += ext_cost(i, k)*G[size*i + k];
             contract(i, k);
         }
         //suppression de l'arête
@@ -24,7 +24,7 @@ Cost TriScore::solve(){
         //update du tableau des ratio
         updateRatio();
     }
-    return cost;
+    return bestCost;
 }
 
 /**
@@ -146,43 +146,8 @@ void TriScore::init(string file){
     sort(R.begin(), R.end(), [](pair<int, double> a, pair<int, double> b){return a.second > b.second;});
 }
 
-void TriScore::execfile(string file){
-    string path = "../instances/" + file;
-    //cout << "Starting initialisation on : " << file << endl;
-    init(path);
-    //cout << "End of initialisation" << endl;
-    //cout << "Starting solving" << endl;
-    auto start = std::chrono::high_resolution_clock::now();
-    bestCost = solve();
-    auto end = std::chrono::high_resolution_clock::now();
-    time = end-start;
-    cout << "Best cost : " << bestCost << '\n';
-    cout << "Best order : ";
-    display_order();
-    std::cout << std::scientific << "Temps : " << time.count()<< "s" << '\n';
-    cout << "--------------" << endl;
-}
-
-void TriScore::execdir(string dir){
-    string base = "../instances/" + dir + "/";
-    DIR* dp = NULL;
-    struct dirent *file = NULL;
-    dp = opendir(base.c_str());
-    if(dp == NULL){
-        cerr << "Could not open directory : " << base << '\n';
-        exit(-1);
-    }
-    file = readdir(dp);
-    
-    while(file != NULL){
-        if(file->d_name[0] != '.'){
-            string path = base + file->d_name;
-            display(path);
-            execfile(path);
-        }
-        file = readdir(dp);
-    }
-    closedir(dp);
+Cost TriScore::call_solve(){
+    return solve();
 }
 
 void get_approx_solution(int& cost, Tab& O, string file){

@@ -16,9 +16,9 @@ void MatrixSolver::solve(int n, Cost cost, vector<pair<int, int>> v, Network N){
             solve(n-1, cost + contractionCost(i, j, N), v2, contract(i, j, N));
         }
     }
-    if(n <= 1 && cost < bestCost){
+    if(n <= 1 && cost <= bestCost && cost > 0){
         bestCost = cost;
-        bestOrder = v;
+        //bestOrder = v;
     }
 }
 
@@ -67,7 +67,8 @@ Cost contractionCost(int i, int j, Network N){
  */
 void MatrixSolver::init(string file){
     bestOrder.clear();
-    bestCost = INT32_MAX;
+
+    bestCost = numeric_limits<Cost>::max() - 1;
     for(int i = 0; i < network.size(); i ++){
         network[i].clear();
     }
@@ -80,7 +81,7 @@ void MatrixSolver::init(string file){
         switch(line[0]){
             case 'p':
                 size = atoi(&line[2]);
-                bestOrder.resize(size);
+                //bestOrder.resize(size);
                 network.resize(size);
                 for(int k = 0; k < size; k ++){
                     network[k].resize(size, 1);
@@ -102,47 +103,13 @@ void MatrixSolver::init(string file){
  * @brief displays bestOrder
  * 
  */
-void MatrixSolver::display_best_order(){
-    for(int k = 0; k < bestOrder.size(); k++){
+void MatrixSolver::display_order(){
+    /*for(int k = 0; k < bestOrder.size(); k++){
         cout << "(" << bestOrder[k].first << ", " << bestOrder[k].second << ")||";
-    }
+    }*/
 }
 
-void MatrixSolver::execfile(string file){
-    string path = "../instances/" + file;
-    //cout << "Starting initialisation on : " << file << endl;
-    init(path);
-    //cout << "End of initialisation" << endl;
-    //cout << "Starting solving" << endl;
-    auto start = std::chrono::high_resolution_clock::now();
+Cost MatrixSolver::call_solve(){
     solve(size, 0, {}, network);
-
-    auto end = chrono::high_resolution_clock::now();
-    time = end-start;
-    cout << "Best cost* : " << bestCost << endl;
-    cout << std::scientific << "Temps : " << time.count()<< "s" << std::endl;
-    cout << "-------------" << endl;
-}
-
-void MatrixSolver::execdir(string dir){
-    string base = "../instances/" + dir + "/";
-    DIR* dp = NULL;
-    struct dirent *file = NULL;
-    dp = opendir(base.c_str());
-    
-    if(dp == NULL){
-        cerr << "Could not open directory : " << base << '\n';
-        exit(-1);
-    }
-    file = readdir(dp);
-    
-    while(file != NULL){
-        if(file->d_name[0] != '.'){
-            string path = base + file->d_name;
-            display(path);
-            execfile(path);
-        }
-        file = readdir(dp);
-    }
-    closedir(dp);
+    return bestCost;
 }

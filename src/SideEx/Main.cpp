@@ -1,7 +1,7 @@
-#include "SideLimSolver.hpp"
+#include "SideExSolver.hpp"
 
 int main(int argc, char* argv[]){
-    SLim solver;
+    SideEx solver;
     const char* path;
     bool sf = true;
 
@@ -20,7 +20,7 @@ int main(int argc, char* argv[]){
                 if(i == argc-1){
                     cerr << "Missing argument : range" << '\n';
                 }
-                solver.delta = atoi(argv[i+1]);
+                solver.refdelta = atoi(argv[i+1]);
                 i++;
             }else{
                 path = argv[i];
@@ -29,9 +29,9 @@ int main(int argc, char* argv[]){
     }
     if(sf){
         display(path);
-        solver.execfile(path);
+        execfile(solver, path);
     }else{
-        solver.execdir(path);
+        execdir(solver, path);
     }
     return 0;
 }
