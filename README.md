@@ -14,15 +14,15 @@ When in the 'build' directory, use 'cmake .' to set up the compiler, then 'make'
 * Compute, to test the cost of a specific contraction order
 * InitInstances, to generate instances
 * Solver, main program that can execute every other solver, display the TT, and export the results
-* SolverMatrix, greedy algorithm iterating on every pair of nodes
-* SolverTS, sorts every edges by weights^2/contraction_cost, and contracts the edge with the best ratio at each step
-* SolverMTS, uses TS's order as reference, and shakes it to try and improve it
+* SolverMatrix, algorithm iterating on every pair of tensors (O(n!^2))
+* SolverTS, heuristic that sorts every edges by weights^2/contraction_cost, and contracts the edge with the best ratio at each step
+* SolverMTS, uses TS's order as reference, and shakes it to try and improve it using a user-defined parameter DELTA (not fonctioning)
 * SolverNTS, same as TS but defines the order to follow at the beggining and never updates it
-* SolverSide, contracts a TT from a side, but limits how many central edges can merge in a row, using a user-set parameters DELTA.
-* SolverSplit, greedy algorithm iterating on every split of 2 sets of nodes
-* SolverVSplit, heuristic that splits the TT in pieces of max size DELTA, then solves them using any greedy algorithm
-* SolverSimpleG, greedy algorithms iterating on every edges
-* SolverEdgeSplit, heuristic that splits the TT in 2 convex shapes
+* SolverSide, heuristic that contracts a TT from a side (from left to right, dimension by dimension), but limits how many central edges can merge in a row, using a user-defined parameter DELTA.
+* SolverSplit, algorithm iterating on every split of 2 sets of tensors
+* SolverVSplit, heuristic that splits the TT in pieces of max size DELTA, then solves them using any exact algorithm
+* SolverSimpleG, algorithm that tests every existing contraction order, by only considering edges
+* SolverEdgeSplit, heuristic that splits the TT in (exactly) 2 convex shapes
 
 # Instances
 Instances are text files located in the 'instances' directory. They can be read by the programs in order to be solved.
